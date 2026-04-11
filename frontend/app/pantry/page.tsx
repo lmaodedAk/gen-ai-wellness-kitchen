@@ -6,6 +6,7 @@ import { Plus, Search, Trash2, Pencil } from 'lucide-react'
 import { freshnessColor } from '@/lib/utils'
 import { useRouter } from 'next/navigation'
 import toast from 'react-hot-toast'
+import { API_URL } from '@/lib/config'
 
 const CATS = ['All','Vegetables','Grains','Legumes','Dairy','Oils','Other']
 
@@ -18,7 +19,7 @@ export default function PantryPage() {
       : null)
   )
   const router = useRouter()
-  const API = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000'
+  const API = process.env.NEXT_PUBLIC_API_URL || API_URL
   const [items, setItems] = useState<any[]>([])
   const [search, setSearch] = useState('')
   const [cat, setCat] = useState('All')
@@ -98,7 +99,7 @@ export default function PantryPage() {
         return
       }
       const res = await fetch(
-        `http://localhost:8000/leftovers/my`,
+        `${API_URL}/leftovers/my`,
         { 
           headers: { 
             Authorization: `Bearer ${currentToken}` 
@@ -315,7 +316,7 @@ export default function PantryPage() {
                     onClick={async () => {
                       const currentToken = localStorage.getItem('access_token')
                       await fetch(
-                        `http://localhost:8000/leftovers/${lft.id}/used`,
+                        `${API_URL}/leftovers/${lft.id}/used`,
                         {
                           method: 'PUT',
                           headers: {

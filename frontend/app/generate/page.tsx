@@ -5,6 +5,7 @@ import { recipesApi } from '@/lib/api'
 import { Image as ImageIcon, Type, ChefHat, Sparkles, Upload, BookmarkPlus, ShoppingCart, Mic, RefreshCw, X } from 'lucide-react'
 import toast from 'react-hot-toast'
 import { foodImage as recipeImage } from '@/lib/images'
+import { API_URL } from '@/lib/config'
 
 const TABS = [
   { id: 'ingredients', label: 'By Ingredients', icon: Type },
@@ -53,7 +54,7 @@ export default function GeneratePage() {
     // Load pantry items for quick-add
     if (user?.id) {
       const t = localStorage.getItem('access_token')
-      fetch(`http://localhost:8000/pantry/${user.id}`, {
+      fetch(`${API_URL}/pantry/${user.id}`, {
         headers: { Authorization: `Bearer ${t}` }
       }).then(r => r.json()).then(d => {
         if (d.success) setPantryItems(d.data || [])
@@ -379,7 +380,7 @@ export default function GeneratePage() {
                   onClick={async () => {
                     const currentToken = typeof window !== 'undefined' ? localStorage.getItem('access_token') : token
                     try {
-                      const res = await fetch(`http://localhost:8000/recipes/${recipe.id}/cooked`, {
+                      const res = await fetch(`${API_URL}/recipes/${recipe.id}/cooked`, {
                         method: 'POST',
                         headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${currentToken}` },
                         body: JSON.stringify({ meal_type: mealType })
@@ -400,7 +401,7 @@ export default function GeneratePage() {
                   onClick={async () => {
                     const currentToken = typeof window !== 'undefined' ? localStorage.getItem('access_token') : token
                     try {
-                      await fetch(`http://localhost:8000/recipes/${recipe.id}/save`, {
+                      await fetch(`${API_URL}/recipes/${recipe.id}/save`, {
                         method: 'PUT',
                         headers: { 'Authorization': `Bearer ${currentToken}` }
                       })
@@ -420,7 +421,7 @@ export default function GeneratePage() {
                       setGroceryLoading(true)
                       setShowGrocery(true)
                       try {
-                        const res = await fetch('http://localhost:8000/recipes/extras/grocery-list', {
+                        const res = await fetch(API_URL + '/recipes/extras/grocery-list', {
                           method: 'POST',
                           headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${currentToken}` },
                           body: JSON.stringify({
@@ -471,7 +472,7 @@ export default function GeneratePage() {
                           setSubLoading(true)
                           setSubResult(null)
                           try {
-                            const res = await fetch('http://localhost:8000/recipes/extras/substitute', {
+                            const res = await fetch(API_URL + '/recipes/extras/substitute', {
                               method: 'POST',
                               headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${currentToken}` },
                               body: JSON.stringify({ ingredient: subIngredient, recipe_context: recipe.title })
@@ -697,7 +698,7 @@ export default function GeneratePage() {
                     .filter((i: any) => i.name)
                   try {
                     const res = await fetch(
-                      `http://localhost:8000/leftovers/log`,
+                      `${API_URL}/leftovers/log`,
                       {
                         method: 'POST',
                         headers: {

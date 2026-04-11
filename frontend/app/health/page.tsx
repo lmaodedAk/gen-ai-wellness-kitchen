@@ -7,6 +7,7 @@ import {
   ResponsiveContainer, BarChart, Bar, Cell, PieChart, Pie
 } from 'recharts'
 import { Flame, Zap, Target, TrendingUp, Plus } from 'lucide-react'
+import { API_URL } from '@/lib/config'
 
 const DAYS = ['Mon','Tue','Wed','Thu','Fri','Sat','Sun']
 const MEAL_EMOJIS: Record<string, string> = {
@@ -57,7 +58,7 @@ export default function HealthPage() {
     Promise.allSettled([
       healthApi.stats(user.id),
       healthApi.history(user.id, view === 'Weekly' ? 7 : 30),
-      fetch(`http://localhost:8000/health/intake/today`, {
+      fetch(`${API_URL}/health/intake/today`, {
         headers: { Authorization: `Bearer ${currentToken}` }
       }).then(r => r.json()).catch(() => ({ success: false })),
     ]).then(([statsRes, histRes, intakeRes]) => {
@@ -106,7 +107,7 @@ export default function HealthPage() {
 
   async function buildWeekLog(currentToken: string) {
     try {
-      const res = await fetch('http://localhost:8000/health/intake/today', {
+      const res = await fetch(API_URL + '/health/intake/today', {
         headers: { Authorization: `Bearer ${currentToken}` }
       })
       const data = await res.json()
@@ -153,7 +154,7 @@ export default function HealthPage() {
     setLoadingRec(true)
     setAiMealRec('')
     try {
-      const res = await fetch('http://localhost:8000/tutor/ask', {
+      const res = await fetch(API_URL + '/tutor/ask', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${currentToken}` },
         body: JSON.stringify({
@@ -172,7 +173,7 @@ Be brief and practical.`
     if(!newTarget) return;
     const currentToken = typeof window !== 'undefined' ? localStorage.getItem('access_token') : token;
     try {
-      const res = await fetch(`http://localhost:8000/health/profile/${user?.id}`, {
+      const res = await fetch(`${API_URL}/health/profile/${user?.id}`, {
         method: 'PUT',
         headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${currentToken}` },
         body: JSON.stringify({ manual_calorie_target: parseInt(newTarget) })

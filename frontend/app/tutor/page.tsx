@@ -2,6 +2,7 @@
 import { useState } from 'react'
 import { useAuthStore } from '@/lib/store'
 import { GraduationCap, Send, Lightbulb, ChefHat, Leaf, Sparkles } from 'lucide-react'
+import { API_URL } from '@/lib/config'
 
 const QUICK_QUESTIONS = [
   "Why should you soak rice before cooking?",
@@ -41,7 +42,7 @@ export default function TutorPage() {
     setLoading(true)
 
     try {
-      const res = await fetch('http://localhost:8000/tutor/ask', {
+      const res = await fetch(API_URL + '/tutor/ask', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${currentToken}` },
         body: JSON.stringify({ question: q })

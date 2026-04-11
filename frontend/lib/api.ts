@@ -1,7 +1,8 @@
 import axios from 'axios'
+import { API_URL } from '@/lib/config'
 
 const API = axios.create({
-  baseURL: process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000',
+  baseURL: process.env.NEXT_PUBLIC_API_URL || API_URL,
   timeout: 60000,
 })
 
@@ -23,7 +24,7 @@ API.interceptors.response.use(
       if (refresh) {
         try {
           const { data } = await axios.post(
-            `${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000'}/auth/refresh`,
+            `${process.env.NEXT_PUBLIC_API_URL || API_URL}/auth/refresh`,
             { refresh_token: refresh }
           )
           localStorage.setItem('access_token', data.data.access_token)

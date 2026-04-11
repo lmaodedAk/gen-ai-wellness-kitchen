@@ -3,6 +3,7 @@ import { useState, useEffect } from 'react'
 import { useAuthStore } from '@/lib/store'
 import toast from 'react-hot-toast'
 import { useRouter } from 'next/navigation'
+import { API_URL } from '@/lib/config'
 
 const DAYS = [
   'Monday','Tuesday','Wednesday',
@@ -47,7 +48,7 @@ export default function MealPlannerPage() {
   const [activeDay, setActiveDay] = useState(todayIndex)
   const [intake, setIntake] = useState<any[]>([])
   const [loggedMeals, setLoggedMeals] = useState<Set<string>>(new Set())
-  const API = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000'
+  const API = process.env.NEXT_PUBLIC_API_URL || API_URL
 
   useEffect(() => { 
     fetchExistingPlan() 

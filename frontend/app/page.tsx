@@ -6,6 +6,7 @@ import { recipesApi, pantryApi } from '@/lib/api'
 import { Camera, Type, Recycle, CalendarDays, TrendingUp, Flame, Heart, Eye, Bookmark, Sparkles } from 'lucide-react'
 import Link from 'next/link'
 import { foodImage } from '@/lib/images'
+import { API_URL } from '@/lib/config'
 
 export default function Dashboard() {
   const user = useAuthStore((s: any) => s.user)
@@ -56,7 +57,7 @@ export default function Dashboard() {
     try {
       const currentToken = localStorage.getItem('access_token')
       const res = await fetch(
-        `http://localhost:8000/health/intake/today`,
+        `${API_URL}/health/intake/today`,
         { headers: { Authorization: `Bearer ${currentToken}` } }
       )
       const data = await res.json()
@@ -71,7 +72,7 @@ export default function Dashboard() {
     try {
       const currentToken = localStorage.getItem('access_token')
       const res = await fetch(
-        `http://localhost:8000/leftovers/suggest`,
+        `${API_URL}/leftovers/suggest`,
         { 
           method: 'POST',
           headers: { 
@@ -95,7 +96,7 @@ export default function Dashboard() {
     setLoadingSugg(true)
     try {
       const res = await fetch(
-        `http://localhost:8000/suggestions/daily`,
+        `${API_URL}/suggestions/daily`,
         { 
           headers: { Authorization: `Bearer ${currentToken}` },
           cache: 'no-store'
@@ -117,7 +118,7 @@ export default function Dashboard() {
 
     // Fire ALL API calls in parallel — site loads instantly
     const headers = { Authorization: `Bearer ${currentToken}` }
-    const API = 'http://localhost:8000'
+    const API = API_URL
 
     Promise.allSettled([
       recipesApi.list(user.id, 0, 6),

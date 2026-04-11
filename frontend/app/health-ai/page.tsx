@@ -2,6 +2,7 @@
 import { useState } from 'react'
 import { useAuthStore } from '@/lib/store'
 import { ShieldCheck, AlertTriangle, CheckCircle, X } from 'lucide-react'
+import { API_URL } from '@/lib/config'
 
 const CONDITIONS_LIST = [
   { id: 'diabetes', label: 'Diabetes', emoji: '🩸', desc: 'Type 1 or Type 2' },
@@ -45,7 +46,7 @@ export default function HealthAIPage() {
     setError('')
     setResult(null)
     try {
-      const res = await fetch('http://localhost:8000/health-ai/analyze', {
+      const res = await fetch(API_URL + '/health-ai/analyze', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${currentToken}` },
         body: JSON.stringify({ conditions: selected })

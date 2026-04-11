@@ -3,6 +3,7 @@ import { useState, useEffect, useRef } from 'react'
 import { Volume2, VolumeX, SkipForward, SkipBack, Play, Pause, ChefHat, Globe, Search } from 'lucide-react'
 import { useSearchParams } from 'next/navigation'
 import { useAuthStore } from '@/lib/store'
+import { API_URL } from '@/lib/config'
 
 type Lang = 'en' | 'hi'
 
@@ -58,7 +59,7 @@ export default function VoiceCookPage() {
     setMeta(null)
     setCurrentStep(0)
     try {
-      const res = await fetch('http://localhost:8000/cook/steps', {
+      const res = await fetch(API_URL + '/cook/steps', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` },
         body: JSON.stringify({ recipe_name: name })

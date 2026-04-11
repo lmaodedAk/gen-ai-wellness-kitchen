@@ -3,6 +3,7 @@ import { useState, useEffect } from 'react'
 import { useRouter } from 'next/navigation'
 import { useAuthStore } from '@/lib/store'
 import { BrainCircuit, Sparkles, ChefHat, Clock, Flame, RefreshCw } from 'lucide-react'
+import { API_URL } from '@/lib/config'
 
 const DIET_COLORS: Record<string, string> = {
   vegan:   'bg-emerald-100 text-emerald-700',
@@ -38,7 +39,7 @@ export default function DiscoverPage() {
     setLoading(true)
     setError('')
     try {
-      const res = await fetch('http://localhost:8000/discover/generate', {
+      const res = await fetch(API_URL + '/discover/generate', {
         headers: { Authorization: `Bearer ${currentToken}` },
         cache: 'no-store'
       })

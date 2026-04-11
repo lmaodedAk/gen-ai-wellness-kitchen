@@ -5,6 +5,7 @@ import { useEffect, useState } from 'react'
 import Sidebar from '@/components/Sidebar'
 import { Search, Bell } from 'lucide-react'
 import toast from 'react-hot-toast'
+import { API_URL } from '@/lib/config'
 
 const PUBLIC = ['/login', '/register']
 
@@ -29,7 +30,7 @@ export default function AppShell({ children }: { children: React.ReactNode }) {
     try {
       const token = localStorage.getItem('access_token')
       const res = await fetch(
-        `http://localhost:8000/rag/search?q=${encodeURIComponent(q)}`,
+        `${API_URL}/rag/search?q=${encodeURIComponent(q)}`,
         { headers: { Authorization: `Bearer ${token}` }}
       )
       const data = await res.json()
