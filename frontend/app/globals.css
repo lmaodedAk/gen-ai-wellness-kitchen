@@ -1,0 +1,139 @@
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap');
+
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+:root {
+  --sidebar-bg: #1a3328;
+  --sidebar-active: #2d5a47;
+  --accent-green: #2d6a4f;
+  --accent-gold: #e8a020;
+  --bg-cream: #f7f6f2;
+  --bg-card: #ffffff;
+  --text-primary: #1a1a1a;
+  --text-muted: #6b7280;
+  --border: #e5e7eb;
+}
+
+* { box-sizing: border-box; }
+
+body {
+  font-family: 'Inter', sans-serif;
+  background: var(--bg-cream);
+  color: var(--text-primary);
+  margin: 0;
+}
+
+/* Scrollbar */
+::-webkit-scrollbar { width: 6px; height: 6px; }
+::-webkit-scrollbar-track { background: transparent; }
+::-webkit-scrollbar-thumb { background: #d1d5db; border-radius: 3px; }
+::-webkit-scrollbar-thumb:hover { background: #9ca3af; }
+
+/* Animations */
+@keyframes fadeUp {
+  from { opacity: 0; transform: translateY(12px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+@keyframes pulse-soft {
+  0%, 100% { opacity: 1; }
+  50%       { opacity: 0.6; }
+}
+@keyframes spin-slow {
+  from { transform: rotate(0deg); }
+  to   { transform: rotate(360deg); }
+}
+
+.fade-up        { animation: fadeUp 0.35s ease both; }
+.pulse-soft     { animation: pulse-soft 2s ease-in-out infinite; }
+.spin-slow      { animation: spin-slow 2s linear infinite; }
+
+/* Glass card */
+.glass {
+  background: rgba(255,255,255,0.8);
+  backdrop-filter: blur(12px);
+  border: 1px solid rgba(255,255,255,0.6);
+}
+
+/* Green gradient button */
+.btn-primary {
+  background: linear-gradient(135deg, #2d6a4f 0%, #1a4035 100%);
+  color: white;
+  border: none;
+  border-radius: 10px;
+  padding: 12px 24px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+.btn-primary:hover { transform: translateY(-1px); box-shadow: 0 4px 16px rgba(45,106,79,0.4); }
+
+/* Gold button */
+.btn-gold {
+  background: linear-gradient(135deg, #e8a020 0%, #c8860a 100%);
+  color: white;
+  border: none;
+  border-radius: 10px;
+  padding: 10px 20px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+.btn-gold:hover { transform: translateY(-1px); box-shadow: 0 4px 16px rgba(232,160,32,0.4); }
+
+/* Freshness pill */
+.pill-expired  { background: #fee2e2; color: #dc2626; }
+.pill-expiring { background: #fef3c7; color: #d97706; }
+.pill-use-soon { background: #fef9c3; color: #ca8a04; }
+.pill-fresh    { background: #dcfce7; color: #16a34a; }
+
+/* Fix stacking context black box bug */
+* {
+  isolation: auto;
+}
+
+.modal-overlay {
+  position: fixed !important;
+  inset: 0 !important;
+  background: transparent !important;
+  z-index: 9999 !important;
+  display: flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  padding: 1rem !important;
+  isolation: isolate;
+}
+
+.modal-content {
+  background: white !important;
+  border-radius: 16px !important;
+  padding: 1.5rem !important;
+  width: 100% !important;
+  max-width: 32rem !important;
+  z-index: 10000 !important;
+  max-height: 90vh !important;
+  overflow-y: auto !important;
+  position: relative !important;
+  isolation: isolate;
+}
+
+body {
+  background: #F9FAFB !important;
+  min-height: 100vh;
+}
+
+#__next {
+  background: #F9FAFB !important;
+}
+
+/* Remove any dark/purple background bleed */
+div[class*="bg-transparent"],
+div[class*="bg-none"] {
+  background: transparent !important;
+}
+
+.sidebar-content + main,
+.page-content {
+  background: #F9FAFB !important;
+}

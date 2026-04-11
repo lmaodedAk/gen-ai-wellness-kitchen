@@ -1,0 +1,246 @@
+
+> frontend@0.1.0 dev
+> next dev
+
+  ▲ Next.js 14.2.35
+  - Local:        http://localhost:3000
+  - Environments: .env.local
+
+ ✓ Starting...
+ ✓ Ready in 1172ms
+ ○ Compiling /pantry ...
+ ✓ Compiled /pantry in 743ms (795 modules)
+ GET /pantry 200 in 880ms
+ ✓ Compiled in 86ms (351 modules)
+ ✓ Compiled /meal-planner in 119ms (787 modules)
+ ✓ Compiled / in 186ms (809 modules)
+ ✓ Compiled /generate in 80ms (821 modules)
+ ✓ Compiled /recipes in 102ms (833 modules)
+ ✓ Compiled /settings in 211ms (843 modules)
+ ✓ Compiled /_not-found in 273ms (846 modules)
+ GET /.well-known/appspecific/com.chrome.devtools.json 404 in 342ms
+ GET /generate 200 in 72ms
+ GET /.well-known/appspecific/com.chrome.devtools.json 404 in 19ms
+ ○ Compiling /health ...
+ ✓ Compiled /health in 543ms (1778 modules)
+ ✓ Compiled /meal-planner in 55ms (947 modules)
+ ✓ Compiled in 432ms (1321 modules)
+ ✓ Compiled in 368ms (1323 modules)
+ GET /generate?meal=Chirer+Polao+with+Vegetables&meal_type=breakfast&cuisine=bengali 200 in 60ms
+ ✓ Compiled /_not-found in 154ms (1312 modules)
+ GET /discover 404 in 16ms
+ ✓ Compiled in 177ms (850 modules)
+ GET /discover 404 in 76ms
+ ✓ Compiled /discover in 356ms (1322 modules)
+ GET /discover 200 in 60ms
+ ✓ Compiled in 413ms (1324 modules)
+ ✓ Compiled in 327ms (1324 modules)
+ ✓ Compiled in 413ms (1310 modules)
+ ✓ Compiled in 79ms (852 modules)
+ ✓ Compiled in 86ms (1310 modules)
+ ✓ Compiled in 193ms (852 modules)
+ ✓ Compiled in 90ms (1310 modules)
+ ✓ Compiled in 355ms (1330 modules)
+ ✓ Compiled in 159ms (855 modules)
+ ✓ Compiled /cook in 251ms (1334 modules)
+ ✓ Compiled /tutor in 127ms (1346 modules)
+ ✓ Compiled in 303ms (1347 modules)
+ ✓ Compiled in 305ms (1333 modules)
+ ✓ Compiled /health-ai in 166ms (1344 modules)
+ ✓ Compiled /pantry in 163ms (485 modules)
+ ✓ Compiled /recipes in 97ms (493 modules)
+ ✓ Compiled /health in 267ms (965 modules)
+ ✓ Compiled / in 189ms (968 modules)
+ ✓ Compiled /generate in 200ms (950 modules)
+ ✓ Compiled in 275ms (876 modules)
+ ✓ Compiled in 555ms (1839 modules)
+ ✓ Compiled in 264ms (1839 modules)
+ ✓ Compiled in 408ms (1839 modules)
+ GET / 200 in 114ms
+ ✓ Compiled /cook in 190ms (966 modules)
+ GET /cook 200 in 239ms
+ GET /health 200 in 151ms
+ GET /cook 200 in 59ms
+ GET / 200 in 37ms
+ ✓ Compiled /recipes in 235ms (967 modules)
+ ✓ Compiled /pantry in 103ms (974 modules)
+ ✓ Compiled /tutor in 90ms (981 modules)
+ ✓ Compiled /health-ai in 151ms (489 modules)
+ ✓ Compiled /health in 135ms (973 modules)
+ ✓ Compiled in 490ms (1848 modules)
+ ✓ Compiled in 356ms (1848 modules)
+ ⨯ ./app/health/page.tsx
+Error: 
+  [31mx[0m Expected ',', got '{'
+     ,-[[36;1;4m/Users/akshatjain/projects/gen ai wellness kitchen/frontend/app/health/page.tsx[0m:309:1]
+ [2m309[0m |             )}
+ [2m310[0m |           </div>
+ [2m311[0m | 
+ [2m312[0m |           {/* Today's meals logged */}
+     : [31;1m          ^[0m
+ [2m313[0m |           <div className="bg-white rounded-2xl p-5 border border-gray-100">
+ [2m314[0m |             <h2 className="font-bold text-sm mb-4">📋 Today's Meals</h2>
+ [2m315[0m |             <div className="grid grid-cols-2 gap-2">
+     `----
+
+Caused by:
+    Syntax Error
+
+Import trace for requested module:
+./app/health/page.tsx
+ ⨯ ./app/health/page.tsx
+Error: 
+  [31mx[0m Expected ',', got '{'
+     ,-[[36;1;4m/Users/akshatjain/projects/gen ai wellness kitchen/frontend/app/health/page.tsx[0m:309:1]
+ [2m309[0m |             )}
+ [2m310[0m |           </div>
+ [2m311[0m | 
+ [2m312[0m |           {/* Today's meals logged */}
+     : [31;1m          ^[0m
+ [2m313[0m |           <div className="bg-white rounded-2xl p-5 border border-gray-100">
+ [2m314[0m |             <h2 className="font-bold text-sm mb-4">📋 Today's Meals</h2>
+ [2m315[0m |             <div className="grid grid-cols-2 gap-2">
+     `----
+
+Caused by:
+    Syntax Error
+
+Import trace for requested module:
+./app/health/page.tsx
+ GET / 500 in 3ms
+ GET / 500 in 4ms
+ ○ Compiling /_error ...
+ ⨯ ./app/health/page.tsx
+Error: 
+  [31mx[0m Expected ',', got '{'
+     ,-[[36;1;4m/Users/akshatjain/projects/gen ai wellness kitchen/frontend/app/health/page.tsx[0m:309:1]
+ [2m309[0m |             )}
+ [2m310[0m |           </div>
+ [2m311[0m | 
+ [2m312[0m |           {/* Today's meals logged */}
+     : [31;1m          ^[0m
+ [2m313[0m |           <div className="bg-white rounded-2xl p-5 border border-gray-100">
+ [2m314[0m |             <h2 className="font-bold text-sm mb-4">📋 Today's Meals</h2>
+ [2m315[0m |             <div className="grid grid-cols-2 gap-2">
+     `----
+
+Caused by:
+    Syntax Error
+
+Import trace for requested module:
+./app/health/page.tsx
+ GET /_next/static/webpack/4d970ddb40ccde9d.webpack.hot-update.json 500 in 345ms
+ GET / 500 in 2ms
+ GET /_next/static/webpack/4d970ddb40ccde9d.webpack.hot-update.json 500 in 2ms
+ GET / 500 in 2ms
+ ⚠ Fast Refresh had to perform a full reload due to a runtime error.
+ ⚠ Fast Refresh had to perform a full reload due to a runtime error.
+ GET / 500 in 16ms
+ ✓ Compiled /_not-found in 955ms (2063 modules)
+ ⚠ Fast Refresh had to perform a full reload due to a runtime error.
+ GET / 200 in 66ms
+ GET /_next/static/webpack/4d970ddb40ccde9d.webpack.hot-update.json 404 in 1023ms
+ GET /_next/static/webpack/4d970ddb40ccde9d.webpack.hot-update.json 404 in 10ms
+ GET / 200 in 11ms
+ ⚠ Fast Refresh had to perform a full reload due to a runtime error.
+ GET / 200 in 10ms
+ GET / 200 in 15ms
+ ✓ Compiled in 272ms (2077 modules)
+ ✓ Compiled in 280ms (2074 modules)
+ GET / 200 in 91ms
+ ✓ Compiled /_not-found in 340ms (2063 modules)
+ GET /.well-known/appspecific/com.chrome.devtools.json 404 in 392ms
+ ✓ Compiled /discover in 228ms (1010 modules)
+ ✓ Compiled /meal-planner in 99ms (1005 modules)
+ ✓ Compiled /recipes in 215ms (998 modules)
+ ✓ Compiled /generate in 122ms (1007 modules)
+ ✓ Compiled /health-ai in 175ms (1013 modules)
+ ✓ Compiled /cook in 123ms (1025 modules)
+ ✓ Compiled /settings in 178ms (1026 modules)
+ ✓ Compiled /pantry in 109ms (1033 modules)
+ GET /health 200 in 164ms
+ ✓ Compiled /discover in 204ms (1025 modules)
+ ✓ Compiled /tutor in 102ms (1032 modules)
+ ✓ Compiled /health-ai in 97ms (1038 modules)
+ ✓ Compiled in 681ms (2071 modules)
+ GET /health 200 in 152ms
+ ✓ Compiled /generate in 201ms (1010 modules)
+ ○ Compiling /_not-found ...
+ ✓ Compiled /_not-found in 508ms (1588 modules)
+ GET /.well-known/appspecific/com.chrome.devtools.json 404 in 574ms
+ ✓ Compiled in 703ms (1599 modules)
+ ✓ Compiled in 466ms (1599 modules)
+ ✓ Compiled /login in 378ms (1595 modules)
+ GET /login 200 in 450ms
+ ✓ Compiled /health in 415ms (1010 modules)
+ GET /health 200 in 543ms
+ GET /pantry 200 in 36ms
+ GET /generate 200 in 39ms
+ ✓ Compiled /health-ai in 255ms (1004 modules)
+ ✓ Compiled /cook in 85ms (1016 modules)
+ ✓ Compiled /meal-planner in 131ms (1020 modules)
+ ✓ Compiled /discover in 211ms (1004 modules)
+ ✓ Compiled /tutor in 105ms (1011 modules)
+ ✓ Compiled /cook in 89ms (1023 modules)
+ ✓ Compiled /health-ai in 113ms (1015 modules)
+ ✓ Compiled /meal-planner in 163ms (1019 modules)
+ GET /pantry 200 in 68ms
+ ✓ Compiled /generate in 123ms (1020 modules)
+ GET /pantry 200 in 60ms
+ GET /pantry 200 in 21ms
+ GET /health 200 in 72ms
+ ✓ Compiled /tutor in 139ms (1017 modules)
+ ✓ Compiled /health-ai in 77ms (1023 modules)
+ ✓ Compiled /meal-planner in 126ms (1027 modules)
+ GET / 200 in 49ms
+ GET /generate 200 in 42ms
+ ✓ Compiled /recipes in 225ms (534 modules)
+ ✓ Compiled /health in 112ms (1008 modules)
+ ✓ Compiled /pantry in 261ms (1010 modules)
+ GET /pantry 200 in 379ms
+ GET /health 200 in 95ms
+ GET /generate 200 in 47ms
+ GET /cook?recipe=Creamy%20Tomato%20and%20Caramelized%20Onion%20Soup 200 in 36ms
+ ✓ Compiled /discover in 199ms (1010 modules)
+ ✓ Compiled /tutor in 143ms (1009 modules)
+ ✓ Compiled /meal-planner in 164ms (1001 modules)
+ ✓ Compiled in 478ms (2070 modules)
+ ✓ Compiled in 536ms (2070 modules)
+ ✓ Compiled in 563ms (2070 modules)
+ ✓ Compiled in 245ms (2070 modules)
+ ✓ Compiled in 164ms (1075 modules)
+ ✓ Compiled in 275ms (2070 modules)
+ GET / 200 in 123ms
+ ✓ Compiled /discover in 256ms (1001 modules)
+ ✓ Compiled /recipes in 200ms (1000 modules)
+ ✓ Compiled /pantry in 95ms (1007 modules)
+ ✓ Compiled /tutor in 105ms (1010 modules)
+ ✓ Compiled /health-ai in 153ms (1005 modules)
+ ✓ Compiled /cook in 124ms (1009 modules)
+ ✓ Compiled in 616ms (2077 modules)
+ GET /health 200 in 144ms
+ ✓ Compiled /meal-planner in 249ms (1006 modules)
+ GET /generate?meal=Omelette+Roll+with+Veggies&meal_type=breakfast&cuisine=north_indian 200 in 60ms
+ ○ Compiling /_not-found ...
+ ✓ Compiled /_not-found in 577ms (2064 modules)
+ GET /.well-known/appspecific/com.chrome.devtools.json 404 in 636ms
+ GET /health 200 in 138ms
+ GET /health 200 in 32ms
+ GET /health 200 in 22ms
+ ✓ Compiled /discover in 232ms (1006 modules)
+ GET /discover 200 in 89ms
+ ✓ Compiled /tutor in 256ms (1001 modules)
+ ✓ Compiled /recipes in 185ms (1003 modules)
+ ✓ Compiled /pantry in 190ms (1010 modules)
+ ✓ Compiled /meal-planner in 92ms (1014 modules)
+ GET /health 200 in 180ms
+ GET /health 200 in 10ms
+ ✓ Compiled /health-ai in 220ms (1003 modules)
+ HEAD / 200 in 47ms
+ GET /health-ai 200 in 25ms
+ ✓ Compiled /meal-planner in 163ms (1001 modules)
+ GET / 200 in 30ms
+ ✓ Compiled /discover in 98ms (1007 modules)
+ ✓ Compiled /cook in 299ms (1012 modules)
+ ✓ Compiled in 984ms (2069 modules)
+ ✓ Compiled /recipes in 225ms (1000 modules)

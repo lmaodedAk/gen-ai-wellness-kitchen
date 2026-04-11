@@ -1,0 +1,77 @@
+
+> frontend@0.1.0 dev
+> next dev
+
+  ▲ Next.js 14.2.35
+  - Local:        http://localhost:3000
+  - Environments: .env.local
+
+ ✓ Starting...
+ ✓ Ready in 1186ms
+ ○ Compiling /generate ...
+ ✓ Compiled /generate in 1158ms (797 modules)
+ GET /generate 200 in 1279ms
+ ✓ Compiled in 74ms (352 modules)
+ ✓ Compiled /meal-planner in 218ms (789 modules)
+ GET /meal-planner 200 in 287ms
+ ✓ Compiled /login in 334ms (791 modules)
+ ✓ Compiled / in 219ms (816 modules)
+ ✓ Compiled /_not-found in 379ms (819 modules)
+ GET /.well-known/appspecific/com.chrome.devtools.json 404 in 454ms
+ GET /meal-planner 200 in 96ms
+ GET /.well-known/appspecific/com.chrome.devtools.json 404 in 16ms
+ GET /.well-known/appspecific/com.chrome.devtools.json 404 in 31ms
+ ✓ Compiled /generate in 137ms (469 modules)
+ ✓ Compiled in 368ms (837 modules)
+ ✓ Compiled in 199ms (837 modules)
+ ✓ Compiled in 269ms (823 modules)
+ ✓ Compiled in 403ms (829 modules)
+ GET /generate?meal=Oats+with+Almond+Milk&meal_type=breakfast&cuisine=Continental 200 in 74ms
+ ✓ Compiled /_not-found in 292ms (818 modules)
+ GET /.well-known/appspecific/com.chrome.devtools.json 404 in 338ms
+ ✓ Compiled /recipes in 309ms (829 modules)
+ ✓ Compiled in 218ms (371 modules)
+ ✓ Compiled in 154ms (829 modules)
+ ✓ Compiled /pantry in 340ms (845 modules)
+ ○ Compiling /health ...
+ ✓ Compiled /health in 1069ms (1781 modules)
+ ✓ Compiled /settings in 193ms (1784 modules)
+ ✓ Compiled / in 127ms (953 modules)
+ GET /pantry 200 in 95ms
+ ✓ Compiled /_not-found in 258ms (1794 modules)
+ GET /.well-known/appspecific/com.chrome.devtools.json 404 in 283ms
+ ✓ Compiled in 431ms (1326 modules)
+ ✓ Compiled in 474ms (1326 modules)
+ GET / 200 in 90ms
+ ✓ Compiled in 320ms (1326 modules)
+ ✓ Compiled in 177ms (1326 modules)
+ ✓ Compiled /recipes in 218ms (481 modules)
+ ✓ Compiled /health in 309ms (947 modules)
+ ✓ Compiled /settings in 143ms (953 modules)
+ GET /pantry 200 in 92ms
+ GET /generate?meal=Vegetable+Poha&meal_type=breakfast&cuisine=north_indian 200 in 35ms
+ ✓ Compiled in 486ms (1326 modules)
+ ✓ Compiled in 162ms (1326 modules)
+ ✓ Compiled / in 117ms (481 modules)
+ ✓ Compiled /health in 90ms (953 modules)
+ ⨯ ./app/page.tsx
+Error: 
+  [31mx[0m Unexpected token `div`. Expected jsx identifier
+     ,-[[36;1;4m/Users/akshatjain/projects/gen ai wellness kitchen/frontend/app/page.tsx[0m:116:1]
+ [2m116[0m |   const featured = recipes[0]
+ [2m117[0m | 
+ [2m118[0m |   return (
+ [2m119[0m |     <div className="space-y-6 fade-up">
+     : [31;1m     ^^^[0m
+ [2m120[0m |       {/* Greeting */}
+ [2m121[0m |       <div className="mb-8">
+ [2m122[0m |         <h1 className="text-3xl font-bold text-gray-900">
+     `----
+
+Caused by:
+    Syntax Error
+
+Import trace for requested module:
+./app/page.tsx
+ ✓ Compiled in 287ms (1322 modules)
+[?25h
