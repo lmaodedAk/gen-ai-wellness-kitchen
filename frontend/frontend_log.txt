@@ -244,3 +244,7 @@ Import trace for requested module:
  ✓ Compiled /cook in 299ms (1012 modules)
  ✓ Compiled in 984ms (2069 modules)
  ✓ Compiled /recipes in 225ms (1000 modules)
+ ✓ Compiled /pantry in 306ms (1007 modules)
+ ✓ Compiled /tutor in 123ms (1014 modules)
+ ✓ Compiled /health-ai in 110ms (1020 modules)
+ ✓ Compiled /cook in 171ms (1028 modules)
