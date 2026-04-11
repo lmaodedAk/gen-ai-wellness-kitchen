@@ -39,9 +39,11 @@ app = FastAPI(
 app.add_middleware(
     CORSMiddleware,
     allow_origins=[
+        "https://gen-ai-wellness-kitchen.vercel.app",
+        "https://*.vercel.app",
         "http://localhost:3000",
-        "https://your-vercel-app.vercel.app",
-        "*"  # remove this after testing
+        "http://127.0.0.1:3000",
+        "*"
     ],
     allow_credentials=False,
     allow_methods=["*"],
