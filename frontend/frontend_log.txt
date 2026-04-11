@@ -248,3 +248,11 @@ Import trace for requested module:
  ✓ Compiled /tutor in 123ms (1014 modules)
  ✓ Compiled /health-ai in 110ms (1020 modules)
  ✓ Compiled /cook in 171ms (1028 modules)
+ ✓ Compiled /meal-planner in 214ms (1006 modules)
+ ⚠ Found a change in next.config.mjs. Restarting the server to apply the changes...
+  ▲ Next.js 14.2.35
+  - Local:        http://localhost:3000
+  - Environments: .env.local
+
+ ✓ Starting...
+ ✓ Ready in 1988ms
