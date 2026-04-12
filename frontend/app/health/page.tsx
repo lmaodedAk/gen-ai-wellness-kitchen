@@ -39,7 +39,8 @@ export default function HealthPage() {
   const [weekLog, setWeekLog] = useState<any[]>([])
   const [caloriesBurnt, setCaloriesBurnt] = useState(0)
   const [showActivityLog, setShowActivityLog] = useState(false)
-  const [loggedActivities, setLoggedActivities] = useState<Array<{label:string,cal:number,emoji:string}>>([])
+  const [loggedActivities, setLoggedActivities] = useState<Array<{label:string,cal:number,emoji:string}>>([]
+  )
   const [customActivity, setCustomActivity] = useState('')
   const [customCal, setCustomCal] = useState('')
   const [aiMealRec, setAiMealRec] = useState<string>('')
@@ -48,11 +49,35 @@ export default function HealthPage() {
   const [activeTab, setActiveTab] = useState<'today'|'week'|'trends'>('today')
   const [isEditingTarget, setIsEditingTarget] = useState(false)
   const [newTarget, setNewTarget] = useState('')
+  // Manual meal logging
+  const [showLogMeal, setShowLogMeal] = useState(false)
+  const [logMealName, setLogMealName] = useState('')
+  const [logMealCal, setLogMealCal] = useState('')
+  const [logMealType, setLogMealType] = useState('lunch')
+  const [logMealLoading, setLogMealLoading] = useState(false)
+
+  async function refreshIntake(currentToken: string) {
+    try {
+      const res = await fetch(`${API_URL}/health/intake/today`, {
+        headers: { Authorization: `Bearer ${currentToken}` }
+      })
+      const data = await res.json()
+      if (data.success) setTodayIntake(data.data)
+    } catch {}
+  }
 
   useEffect(() => {
     if (!user) return
     const currentToken = localStorage.getItem('access_token') || token || ''
     setLoadError(false)
+
+    // Clear activities if new day
+    const savedDate = localStorage.getItem('wellness_activities_date')
+    const today = new Date().toDateString()
+    if (savedDate !== today) {
+      localStorage.removeItem('wellness_activities')
+      localStorage.setItem('wellness_activities_date', today)
+    }
 
     // Use allSettled — one failure never blanks the whole page
     Promise.allSettled([
@@ -88,6 +113,36 @@ export default function HealthPage() {
 
     buildWeekLog(currentToken)
   }, [user, view])
+
+  async function logMealManually() {
+    const cal = parseInt(logMealCal)
+    if (!logMealName.trim() || isNaN(cal) || cal <= 0) return
+    const currentToken = localStorage.getItem('access_token') || token || ''
+    setLogMealLoading(true)
+    try {
+      const res = await fetch(`${API_URL}/health/intake/log`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${currentToken}` },
+        body: JSON.stringify({
+          meal_type: logMealType,
+          recipe_title: logMealName.trim(),
+          calories: cal,
+          protein_g: 0,
+          carbs_g: 0,
+          fat_g: 0,
+          portion: 1.0
+        })
+      })
+      const data = await res.json()
+      if (data.success) {
+        setLogMealName('')
+        setLogMealCal('')
+        setShowLogMeal(false)
+        await refreshIntake(currentToken)
+        await buildWeekLog(currentToken)
+      }
+    } catch {} finally { setLogMealLoading(false) }
+  }
 
   function buildFallbackStats(u: any) {
     // Compute stats locally from user profile when backend is unreachable
@@ -395,6 +450,43 @@ Be brief and practical.`
               </div>
             ) : (
               <p className="text-xs text-gray-400 italic">Enter your calories burnt above, then click to get AI-powered meal suggestions for what to eat with your remaining calories.</p>
+            )}
+          </div>
+
+          {/* Manual Meal Logging */}
+          <div className="bg-white rounded-2xl p-5 border border-gray-100">
+            <div className="flex items-center justify-between mb-3">
+              <h2 className="font-bold text-sm">📝 Log a Meal</h2>
+              <button onClick={() => setShowLogMeal(!showLogMeal)}
+                className="text-xs bg-brand-500 text-white px-3 py-1.5 rounded-lg hover:bg-brand-600 transition font-medium">
+                {showLogMeal ? 'Cancel' : '+ Log Meal'}
+              </button>
+            </div>
+            {showLogMeal && (
+              <div className="space-y-3">
+                <input
+                  value={logMealName} onChange={e => setLogMealName(e.target.value)}
+                  placeholder="Meal name (e.g. Dal Chawal, Oats)..."
+                  className="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm outline-none focus:border-brand-500" />
+                <div className="flex gap-2">
+                  <select value={logMealType} onChange={e => setLogMealType(e.target.value)}
+                    className="flex-1 border border-gray-200 rounded-lg px-3 py-2 text-sm outline-none focus:border-brand-500">
+                    {['breakfast','lunch','dinner','snack'].map(m => (
+                      <option key={m} value={m}>{m.charAt(0).toUpperCase()+m.slice(1)}</option>
+                    ))}
+                  </select>
+                  <input
+                    value={logMealCal} onChange={e => setLogMealCal(e.target.value)}
+                    onKeyDown={e => e.key === 'Enter' && logMealManually()}
+                    type="number" min="1" placeholder="Calories (kcal)"
+                    className="w-36 border border-gray-200 rounded-lg px-3 py-2 text-sm outline-none focus:border-brand-500" />
+                  <button onClick={logMealManually} disabled={logMealLoading}
+                    className="px-4 py-2 bg-brand-500 text-white rounded-lg text-sm font-bold hover:bg-brand-600 disabled:opacity-60 transition">
+                    {logMealLoading ? '...' : 'Add'}
+                  </button>
+                </div>
+                <p className="text-[10px] text-gray-400">This will update your calorie meter immediately ✅</p>
+              </div>
             )}
           </div>
 

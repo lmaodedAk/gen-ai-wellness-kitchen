@@ -4,6 +4,7 @@ import logging
 import re
 import asyncio
 import time
+import base64
 from core.config import settings
 
 logger = logging.getLogger(__name__)
@@ -100,6 +101,69 @@ def _call_with_fallback(full_prompt: str, config: genai.GenerationConfig) -> str
                 break
             time.sleep(0.5)  # brief pause before trying next model
     raise ValueError(f"All models failed. Last error: {last_error}")
+
+
+async def analyze_image_for_ingredients(image_base64: str) -> list:
+    """
+    Pass an image to Gemini Vision and return a list of detected food ingredients.
+    image_base64: data URL like 'data:image/jpeg;base64,...' or raw base64.
+    """
+    # Strip data URL prefix if present
+    if "," in image_base64:
+        header, raw = image_base64.split(",", 1)
+        mime = header.split(":")[1].split(";")[0] if ":" in header else "image/jpeg"
+    else:
+        raw = image_base64
+        mime = "image/jpeg"
+
+    image_part = {
+        "inline_data": {
+            "mime_type": mime,
+            "data": raw
+        }
+    }
+    text_part = (
+        "Look at this food/ingredient photo carefully. "
+        "List ONLY the raw food ingredients you can clearly see. "
+        "Return a JSON array of ingredient names in English, lowercase. "
+        "Example: [\"carrot\", \"potato\", \"onion\"]. "
+        "Include every vegetable, fruit, grain, protein or spice you can see. "
+        "Do NOT include dishes or meals — only raw ingredients. "
+        "Return ONLY the JSON array, nothing else."
+    )
+
+    genai.configure(api_key=settings.gemini_api_key)
+    # Use a vision-capable model
+    vision_models = ["gemini-1.5-flash", "gemini-1.5-pro", "gemini-2.5-flash"]
+    last_err = None
+    for model_name in vision_models:
+        try:
+            model = genai.GenerativeModel(model_name)
+            resp = model.generate_content(
+                [image_part, text_part],
+                generation_config=genai.GenerationConfig(
+                    temperature=0.1,
+                    max_output_tokens=300,
+                )
+            )
+            text = resp.text.strip()
+            # Clean markdown wrappers if any
+            if "```" in text:
+                text = text.split("```")[1]
+                if text.startswith("json"):
+                    text = text[4:]
+                text = text.strip()
+            ingredients = json.loads(text)
+            if isinstance(ingredients, list) and len(ingredients) > 0:
+                logger.info(f"AI detected ingredients from image: {ingredients}")
+                return [str(i).strip().lower() for i in ingredients if i]
+        except Exception as e:
+            logger.warning(f"Vision model {model_name} failed: {str(e)[:120]}")
+            last_err = e
+            if "429" not in str(e) and "quota" not in str(e).lower():
+                break
+    logger.error(f"Image analysis failed: {last_err}")
+    return []  # Return empty list on failure — caller handles fallback
 
 
 async def generate_recipe(prompt: dict, token_budget: str = "default") -> dict:

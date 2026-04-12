@@ -3,10 +3,15 @@ from fastapi.responses import StreamingResponse
 from datetime import datetime
 from bson import ObjectId
 import json
+import logging
+
+logger = logging.getLogger(__name__)
+
 from core.database import get_collection
 from core.dependencies import get_user
 from services.gemini_service import (
-    generate_recipe, generate_recipe_stream
+    generate_recipe, generate_recipe_stream,
+    analyze_image_for_ingredients
 )
 from services.health_engine import compute_health_profile
 from services.rag_service import (
@@ -45,10 +50,32 @@ async def generate(
         if body.get("meal_name"):
             ings.append(body["meal_name"])
 
-        # RAG retrieval
+        # ── Image detection: call Gemini Vision to get real ingredients ──────
+        image_base64 = body.get("image_base64")
+        image_detected = False
+        if image_base64:
+            logger.info("Image upload detected — running Gemini Vision analysis")
+            detected = await analyze_image_for_ingredients(image_base64)
+            if detected:
+                ings = detected  # Replace placeholder with real ingredients
+                image_detected = True
+                logger.info(f"Detected ingredients: {ings}")
+            else:
+                logger.warning("Image analysis returned empty — falling back to pantry")
+                ings = []  # Let pantry items drive the recipe
+
+        # ── RAG retrieval with dietary preferences filter ────────────────────
+        # Determine diet filter from user preferences
+        user_diets = user.get("dietary_preferences", [])
+        dietary_filter = None
+        if "vegan" in user_diets:
+            dietary_filter = "vegan"
+        elif any(d in user_diets for d in ["vegetarian", "veg"]):
+            dietary_filter = "veg"
+
         query = f"{' '.join(ings)} {cuisine} {meal_type}"
         rag_docs = await retrieve(
-            query, str(user["_id"]), top_k=5
+            query, str(user["_id"]), top_k=5, dietary_filter=dietary_filter
         )
         rag_ctx = format_context(rag_docs)
 
@@ -62,7 +89,8 @@ async def generate(
             ings, health, rag_ctx, pantry,
             meal_type, cuisine,
             body.get("max_time", 45),
-            user_prefs
+            user_prefs,
+            image_detected=image_detected
         )
 
         # Generate with Gemini
