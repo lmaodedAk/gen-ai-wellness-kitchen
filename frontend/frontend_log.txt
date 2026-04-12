@@ -256,3 +256,14 @@ Import trace for requested module:
 
  ✓ Starting...
  ✓ Ready in 1988ms
+ ○ Compiling /generate ...
+ ✓ Compiled /generate in 994ms (811 modules)
+ GET /generate?meal=Boiled+Egg+with+Black+Salt&meal_type=snack&cuisine=Bengali 200 in 1120ms
+ ✓ Compiled in 71ms (359 modules)
+ GET /generate?meal=Boiled+Egg+with+Black+Salt&meal_type=snack&cuisine=Bengali 200 in 45ms
+ ✓ Compiled /health-ai in 224ms (807 modules)
+ ○ Compiling /health ...
+ ✓ Compiled /health in 614ms (1773 modules)
+ ✓ Compiled /cook in 134ms (1795 modules)
+ ✓ Compiled /discover in 275ms (1805 modules)
+ ✓ Compiled in 407ms (1807 modules)
