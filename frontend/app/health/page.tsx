@@ -56,15 +56,24 @@ export default function HealthPage() {
   const [logMealType, setLogMealType] = useState('lunch')
   const [logMealLoading, setLogMealLoading] = useState(false)
 
-  async function refreshIntake(currentToken: string) {
+  async function fetchIntake() {
+    const tok = localStorage.getItem('access_token')
+    if (!tok) return
     try {
       const res = await fetch(`${API_URL}/health/intake/today`, {
-        headers: { Authorization: `Bearer ${currentToken}` }
+        headers: { Authorization: `Bearer ${tok}` }
       })
       const data = await res.json()
       if (data.success) setTodayIntake(data.data)
     } catch {}
   }
+
+  useEffect(() => { 
+    fetchIntake() 
+    // Refresh when user logs a meal from another page
+    window.addEventListener('intake-updated', fetchIntake)
+    return () => window.removeEventListener('intake-updated', fetchIntake)
+  }, [])
 
   useEffect(() => {
     if (!user) return
@@ -82,11 +91,8 @@ export default function HealthPage() {
     // Use allSettled — one failure never blanks the whole page
     Promise.allSettled([
       healthApi.stats(user.id),
-      healthApi.history(user.id, view === 'Weekly' ? 7 : 30),
-      fetch(`${API_URL}/health/intake/today`, {
-        headers: { Authorization: `Bearer ${currentToken}` }
-      }).then(r => r.json()).catch(() => ({ success: false })),
-    ]).then(([statsRes, histRes, intakeRes]) => {
+      healthApi.history(user.id, view === 'Weekly' ? 7 : 30)
+    ]).then(([statsRes, histRes]) => {
       if (statsRes.status === 'fulfilled' && statsRes.value?.data) {
         setStats(statsRes.value.data)
       } else {
@@ -96,9 +102,6 @@ export default function HealthPage() {
         setLoadError(true)
       }
       if (histRes.status === 'fulfilled') setHistory(histRes.value?.data || [])
-      if (intakeRes.status === 'fulfilled' && intakeRes.value?.success) {
-        setTodayIntake(intakeRes.value.data)
-      }
     })
 
     // Load saved activities from localStorage
@@ -112,11 +115,7 @@ export default function HealthPage() {
     } catch {}
 
     buildWeekLog(currentToken)
-
-    const handleIntakeUpdate = () => refreshIntake(currentToken)
-    window.addEventListener('intake-updated', handleIntakeUpdate)
-    return () => window.removeEventListener('intake-updated', handleIntakeUpdate)
-  }, [user, view, token])
+  }, [user, view])
 
   async function logMealManually() {
     const cal = parseInt(logMealCal)
@@ -243,7 +242,7 @@ Be brief and practical.`
         setStats(data.data);
         setIsEditingTarget(false);
         // Also refresh intake totals so remaining reflects new target
-        await refreshIntake(currentToken);
+        await fetchIntake();
       }
     } catch {}
   }
