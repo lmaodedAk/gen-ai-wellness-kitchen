@@ -32,6 +32,7 @@ export default function GeneratePage() {
   const [loading, setLoading] = useState(false)
   const [recipe, setRecipe] = useState<any>(null)
   const [steps, setSteps] = useState<string[]>([])
+  const [tokens, setTokens] = useState("") // New state for streaming text
   const [showLeftoverModal, setShowLeftoverModal] = useState(false)
   const [leftoverItems, setLeftoverItems] = useState('')
   const [dragOver, setDragOver] = useState(false)
@@ -86,46 +87,79 @@ export default function GeneratePage() {
     setLoading(true)
     setRecipe(null)
     setSteps([])
-    try {
-      const body: any = { cuisine, meal_type: mealType, max_time: maxTime }
+    setTokens("")
 
-      // Always pass whatever the user typed, regardless of tab
-      if (tab === 'ingredients' && ingredients.trim()) {
-        body.ingredients = ingredients.split(',').map((s: string) => s.trim()).filter(Boolean)
-      }
-      if (tab === 'name' && mealName.trim()) {
-        body.meal_name = mealName.trim()
-        body.ingredients = [mealName.trim()]
-      }
-      // For image tab with no input, tell it to use pantry
-      if (tab === 'image') {
-        if (imagePreview) {
-          // Convert to base64 for backend
-          body.image_base64 = imagePreview
-          body.ingredients = ['detect from image']
-        } else {
-          toast.error('Please upload a food image first')
-          setLoading(false)
-          return
+    try {
+      const currentToken = localStorage.getItem('access_token')
+      
+      // Build the URL with query params for the GET /stream endpoint
+      const params = new URLSearchParams({
+        meal_type: mealType,
+        cuisine: cuisine,
+        max_time: maxTime.toString()
+      })
+      if (tab === 'ingredients' && ingredients.trim()) params.append('ingredients', ingredients)
+      if (tab === 'name' && mealName.trim()) params.append('meal_name', mealName)
+      
+      const streamUrl = `${API_URL}/recipes/generate/stream?${params.toString()}`
+      
+      const response = await fetch(streamUrl, {
+        headers: {
+          'Authorization': `Bearer ${currentToken}`,
+          'Accept': 'text/event-stream'
+        }
+      })
+
+      if (!response.ok) throw new Error('Failed to connect to stream')
+      
+      const reader = response.body?.getReader()
+      if (!reader) throw new Error('Stream reader not available')
+
+      const decoder = new TextDecoder()
+      let buffer = ""
+
+      while (true) {
+        const { value, done } = await reader.read()
+        if (done) break
+
+        buffer += decoder.decode(value, { stream: true })
+        
+        // SSE lines start with "data: "
+        const lines = buffer.split('\n')
+        buffer = lines.pop() || ""
+
+        for (const line of lines) {
+          if (!line.startsWith('data: ')) continue
+          const dataStr = line.replace('data: ', '').trim()
+          if (!dataStr) continue
+
+          try {
+            const parsed = JSON.parse(dataStr)
+            
+            if (parsed.type === 'step') {
+              setSteps(s => [...s, parsed.message])
+            } else if (parsed.type === 'token') {
+              setTokens(prev => prev + (parsed.token || ""))
+            } else if (parsed.type === 'complete') {
+              setRecipe(parsed.recipe)
+              setSteps(s => [...s, '✅ Recipe ready!'])
+              toast.success('Recipe generated! 🎉')
+            } else if (parsed.type === 'error') {
+              throw new Error(parsed.message || 'AI error')
+            } else if (parsed.type === 'warnings') {
+              // Optionally handle warnings
+            }
+          } catch (e: any) {
+            console.error('SSE Parse Error', e)
+          }
         }
       }
-
-      setSteps(s => [...s, '🥘 Checking your pantry...'])
-      await new Promise(r => setTimeout(r, 300))
-      setSteps(s => [...s, '💪 Analyzing health profile...'])
-      await new Promise(r => setTimeout(r, 300))
-      setSteps(s => [...s, '🔍 Finding similar recipes...'])
-      await new Promise(r => setTimeout(r, 300))
-      setSteps(s => [...s, '👨‍🍳 Crafting your recipe...'])
-
-      const res = await recipesApi.generate(body)
-      setRecipe(res.data)
-      setSteps(s => [...s, '✅ Recipe ready!'])
-      toast.success('Recipe generated! 🎉')
     } catch (err: any) {
-      toast.error(err.response?.data?.detail || 'Generation failed — try again')
-      setSteps(s => [...s, '❌ ' + (err.response?.data?.detail || 'Error')])
-    } finally { setLoading(false) }
+      toast.error(err.message || 'Generation failed — try again')
+      setSteps(s => [...s, '❌ ' + (err.message || 'Error')])
+    } finally {
+      setLoading(false)
+    }
   }
 
   function handleImageFile(file: File) {
@@ -330,13 +364,27 @@ export default function GeneratePage() {
 
       {/* Steps */}
       {steps.length > 0 && (
-        <div className="bg-white rounded-xl p-4 border border-gray-100 space-y-2">
-          {steps.map((s, i) => (
-            <div key={i} className="flex items-center gap-2 text-sm text-gray-600 fade-up">
-              <span>{s}</span>
+        <div className="space-y-4">
+            <div className="space-y-2">
+              {steps.map((s, i) => (
+                <p key={i} className="text-sm text-gray-600 animate-in fade-in slide-in-from-left-2 duration-300">
+                  {s.startsWith('✅') || s.startsWith('❌') ? s : '✨ ' + s}
+                </p>
+              ))}
             </div>
-          ))}
-        </div>
+            
+            {tokens && !recipe && (
+              <div className="mt-6 p-4 bg-gray-50 rounded-xl border border-gray-100 max-h-60 overflow-y-auto">
+                <p className="text-xs font-bold text-gray-400 uppercase tracking-widest mb-2 flex items-center gap-2">
+                  <span className="w-1.5 h-1.5 bg-brand-500 rounded-full animate-pulse" />
+                  Live AI Stream
+                </p>
+                <div className="text-sm font-mono text-gray-600 whitespace-pre-wrap leading-relaxed">
+                  {tokens}
+                </div>
+              </div>
+            )}
+          </div>
       )}
 
       {/* Result */}

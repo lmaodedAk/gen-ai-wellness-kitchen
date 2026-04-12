@@ -83,23 +83,23 @@ def _clean_json(text: str) -> dict:
     return json.loads(text)
 
 
-def _call_with_fallback(full_prompt: str, config: genai.GenerationConfig) -> str:
+async def _call_with_fallback(full_prompt: str, config: genai.GenerationConfig) -> str:
     """Try each model in order; return first successful response text."""
     last_error = None
     for model_name in MODEL_CHAIN:
         try:
             model = _get_model(model_name)
-            resp = model.generate_content(full_prompt, generation_config=config)
+            # Use async call
+            resp = await model.generate_content_async(full_prompt, generation_config=config)
             logger.info(f"AI success via {model_name}")
             return resp.text
         except Exception as e:
             err_str = str(e)
             logger.warning(f"Model {model_name} failed: {err_str[:120]}")
             last_error = e
-            # Only retry on 429/quota errors; fail fast on bad prompts
             if "429" not in err_str and "quota" not in err_str.lower():
                 break
-            time.sleep(0.5)  # brief pause before trying next model
+            await asyncio.sleep(0.5)
     raise ValueError(f"All models failed. Last error: {last_error}")
 
 
@@ -180,10 +180,7 @@ async def generate_recipe(prompt: dict, token_budget: str = "default") -> dict:
     config = _build_config(max_tokens)
 
     try:
-        loop = asyncio.get_event_loop()
-        text = await loop.run_in_executor(
-            None, lambda: _call_with_fallback(full_prompt, config)
-        )
+        text = await _call_with_fallback(full_prompt, config)
         return _clean_json(text)
     except json.JSONDecodeError as e:
         logger.error(f"JSON parse error: {e}")
@@ -201,32 +198,33 @@ async def generate_recipe_stream(prompt: dict):
         f"{prompt['user']}"
     )
     config = _build_config(TOKEN_BUDGETS["default"])
+    full_text = ""
 
-    def _stream_collect():
-        for model_name in MODEL_CHAIN:
+    for model_name in MODEL_CHAIN:
+        try:
+            model = _get_model(model_name)
+            resp = await model.generate_content_async(full_prompt, generation_config=config, stream=True)
+            
+            async for chunk in resp:
+                if chunk.text:
+                    full_text += chunk.text
+                    yield {"type": "token", "token": chunk.text}
+            
+            # If we reach here, we successfully streamed
             try:
-                model = _get_model(model_name)
-                resp = model.generate_content(full_prompt, generation_config=config, stream=True)
-                chunks = []
-                for chunk in resp:
-                    if chunk.text:
-                        chunks.append(chunk.text)
-                return chunks
+                recipe = _clean_json(full_text)
+                yield {"type": "complete", "recipe": recipe}
             except Exception as e:
-                if "429" not in str(e) and "quota" not in str(e).lower():
-                    raise
-        raise ValueError("All models quota exceeded")
+                logger.error(f"JSON parse error in stream: {e}")
+                yield {"type": "error", "message": "Chef made a typo, please retry!"}
+            return
 
-    try:
-        loop = asyncio.get_event_loop()
-        chunks = await loop.run_in_executor(None, _stream_collect)
-        full_text = ""
-        for chunk in chunks:
-            full_text += chunk
-            yield {"type": "token", "token": chunk}
+        except Exception as e:
+            err_str = str(e)
+            logger.warning(f"Stream model {model_name} failed: {err_str[:120]}")
+            if "429" not in err_str and "quota" not in err_str.lower():
+                yield {"type": "error", "message": f"AI Error: {err_str}"}
+                return
+            await asyncio.sleep(0.5)
 
-        recipe = _clean_json(full_text)
-        yield {"type": "complete", "recipe": recipe}
-    except Exception as e:
-        logger.error(f"Stream error: {e}")
-        yield {"type": "error", "message": str(e)}
+    yield {"type": "error", "message": "All AI models are busy. Please wait 10 seconds."}

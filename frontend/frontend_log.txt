@@ -267,3 +267,5 @@ Import trace for requested module:
  ✓ Compiled /cook in 134ms (1795 modules)
  ✓ Compiled /discover in 275ms (1805 modules)
  ✓ Compiled in 407ms (1807 modules)
+ ✓ Compiled in 938ms (1807 modules)
+ ✓ Compiled in 230ms (1807 modules)
