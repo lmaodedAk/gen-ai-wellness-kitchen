@@ -40,13 +40,17 @@ Output ONLY valid JSON. No text outside JSON."""
     else:
         ing_line = "Create a healthy meal using pantry items listed below"
 
-    user_msg = f"""{"IMPORTANT: User uploaded a food image. Generate a recipe using EXACTLY the detected ingredients. Ignore dietary profile restrictions for this request." if not user_prefs.get('dietary_preferences') else ""}
+    override_msg = ""
+    if not user_prefs.get('dietary_preferences'):
+        override_msg = "IMPORTANT: User requested specific ingredients or uploaded an image. Generate a recipe using EXACTLY these ingredients. Ignore normal dietary profile restrictions for this request."
+
+    user_msg = f"""{override_msg}
 {ing_line}
 
 User: BMI {health['bmi']} ({health['bmi_category']}), Goal: {user_prefs.get('health_goal','maintain')}, {meal_type} budget: {meal_budget} kcal
 Cuisine: {cuisine if cuisine != 'any' else 'any'}, Max time: {max_time}min
 Allergies: {', '.join(user_prefs.get('allergies',[])) or 'none'}
-Dietary preferences: {', '.join(user_prefs.get('dietary_preferences',[])) or 'none (user uploaded image — use detected ingredients as-is)'}
+Dietary preferences: {', '.join(user_prefs.get('dietary_preferences',[])) or 'none (overridden by explicit ingredient request)'}
 Expiring pantry items to prioritize: {', '.join(critical + soon) or 'none'}
 AI Memory context (user past recipes): {rag_context[:600] if rag_context else 'none'}
 

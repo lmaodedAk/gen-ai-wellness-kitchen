@@ -64,11 +64,21 @@ async def generate(
                 logger.warning("Image analysis returned empty — falling back to pantry")
                 ings = []  # Let pantry items drive the recipe
 
+        # Check if user explicitly typed a non-veg ingredient
+        explicit_nonveg = False
+        non_veg_keywords = {"chicken", "mutton", "fish", "prawn", "beef", "lamb",
+                            "shrimp", "crab", "tuna", "salmon", "keema", 
+                            "meat", "pork", "egg", "eggs", "paneer"}
+        ing_str = " ".join([str(i).lower() for i in ings])
+        if any(kw in ing_str for kw in non_veg_keywords):
+            explicit_nonveg = True
+            logger.info("Explicit non-veg keyword detected in input - overriding dietary constraints")
+
         # ── RAG retrieval ─────────────────────────────────────────
-        # When image was used, don't filter RAG by diet (user chose those ingredients)
+        # When image/explicit text was used, don't filter RAG by diet
         user_diets = user.get("dietary_preferences", [])
-        if image_detected:
-            dietary_filter = None  # Image overrides dietary preferences
+        if image_detected or explicit_nonveg:
+            dietary_filter = None  # Explicit input overrides dietary preferences
         elif "vegan" in user_diets:
             dietary_filter = "vegan"
         elif any(d in user_diets for d in ["vegetarian", "veg"]):
@@ -82,10 +92,10 @@ async def generate(
         )
         rag_ctx = format_context(rag_docs)
 
-        # When image detected, don't impose dietary prefs (user picked the ingredients)
-        if image_detected:
+        # When image/explicit text detected, don't impose dietary prefs
+        if image_detected or explicit_nonveg:
             user_prefs = {
-                "dietary_preferences": [],  # Cleared so AI uses what's in image
+                "dietary_preferences": [],  # Cleared so AI uses what's in image/text
                 "allergies":           user.get("allergies", []),
                 "health_goal":         user.get("health_goal", "maintain")
             }
@@ -158,18 +168,45 @@ async def stream_generate(
             if meal_name:
                 ings.append(meal_name)
 
+            explicit_nonveg = False
+            non_veg_keywords = {"chicken", "mutton", "fish", "prawn", "beef", "lamb",
+                                "shrimp", "crab", "tuna", "salmon", "keema", 
+                                "meat", "pork", "egg", "eggs", "paneer"}
+            ing_str = " ".join([str(i).lower() for i in ings])
+            if any(kw in ing_str for kw in non_veg_keywords):
+                explicit_nonveg = True
+
+            user_diets = user.get("dietary_preferences", [])
+            if explicit_nonveg:
+                dietary_filter = None
+            elif "vegan" in user_diets:
+                dietary_filter = "vegan"
+            elif any(d in user_diets for d in ["vegetarian", "veg"]):
+                dietary_filter = "veg"
+            else:
+                dietary_filter = None
+
             yield 'data: {"type":"step","message":"🔍 Finding similar recipes..."}\n\n'
             rag_docs = await retrieve(
                 f"{' '.join(ings)} {cuisine} {meal_type}",
-                str(user["_id"])
+                str(user["_id"]),
+                top_k=5,
+                dietary_filter=dietary_filter
             )
             rag_ctx = format_context(rag_docs)
 
-            user_prefs = {
-                "dietary_preferences": user.get("dietary_preferences",[]),
-                "allergies":           user.get("allergies",[]),
-                "health_goal":         user.get("health_goal","maintain")
-            }
+            if explicit_nonveg:
+                user_prefs = {
+                    "dietary_preferences": [],
+                    "allergies":           user.get("allergies",[]),
+                    "health_goal":         user.get("health_goal","maintain")
+                }
+            else:
+                user_prefs = {
+                    "dietary_preferences": user.get("dietary_preferences",[]),
+                    "allergies":           user.get("allergies",[]),
+                    "health_goal":         user.get("health_goal","maintain")
+                }
             prompt = build_recipe_prompt(
                 ings, health, rag_ctx, pantry,
                 meal_type, cuisine, max_time, user_prefs
