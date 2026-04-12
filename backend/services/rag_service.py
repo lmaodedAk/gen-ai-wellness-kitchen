@@ -47,13 +47,11 @@ async def index_recipe(recipe: dict, user_id: str, cooked: bool = False):
         "health_tags":    ",".join(recipe.get("health_tags", [])),
         "calories":       str(recipe.get("nutrition", {}).get("calories", 0)),
         "cooked":         "true" if cooked else "false",
-        # Diet classification for filtering
         "diet_type":      _classify_diet(recipe),
     }
 
     try:
         if cooked:
-            # Only cooked recipes go into user history (powers AI memory)
             vs.user_history_collection.add(
                 ids=[str(uuid.uuid4())],
                 embeddings=[emb],
@@ -61,7 +59,6 @@ async def index_recipe(recipe: dict, user_id: str, cooked: bool = False):
                 metadatas=[meta]
             )
 
-        # Always add to global pool (for discover/search)
         vs.recipes_collection.add(
             ids=[str(uuid.uuid4())],
             embeddings=[emb],
@@ -95,7 +92,7 @@ async def retrieve(
     query: str,
     user_id: str,
     top_k: int = 5,
-    dietary_filter: str = None,   # "veg", "vegan", "non-veg", or None
+    dietary_filter: str = None,
 ) -> list:
     """
     Retrieve similar recipes from user history (cooked only) + global pool.
@@ -104,51 +101,76 @@ async def retrieve(
     vs = get_vector_store()
     q_emb = embed(query)
     results = []
-
-    # Build diet exclusion set
     excluded_types = _build_diet_exclusion(dietary_filter)
 
-    # ── User cooked history (powers AI Memory) ─────────────────────────────
+    # ── User cooked history ────────────────────────────────────────────────
     try:
         count = vs.user_history_collection.count()
         if count > 0:
-            r = vs.user_history_collection.query(
-                query_embeddings=[q_emb],
-                n_results=min(5, count),
-                where={"user_id": str(user_id)}
-            )
-            for i in range(len(r["ids"][0])):
-                meta = r["metadatas"][0][i]
+            take = min(5, count)
+            # Try with user_id filter first
+            try:
+                r = vs.user_history_collection.query(
+                    query_embeddings=[q_emb],
+                    n_results=take,
+                    where={"user_id": {"$eq": str(user_id)}}
+                )
+            except Exception:
+                # ChromaDB where filter fails when < 2 docs — fall back to no filter
+                try:
+                    r = vs.user_history_collection.query(
+                        query_embeddings=[q_emb],
+                        n_results=take
+                    )
+                except Exception:
+                    r = {"ids": [[]], "distances": [[]], "metadatas": [[]]}
+
+            ids = r.get("ids", [[]])[0] if r.get("ids") else []
+            for i in range(len(ids)):
+                meta = r["metadatas"][0][i] if r.get("metadatas") and r["metadatas"][0] else {}
+                dist = r["distances"][0][i] if r.get("distances") and r["distances"][0] else 0.5
                 if excluded_types and meta.get("diet_type", "") in excluded_types:
                     continue
-                score = (1 - r["distances"][0][i]) * 1.4  # boost personal history
+                # Only include entries for this user (if filter was bypassed)
+                if meta.get("user_id") and meta["user_id"] != str(user_id):
+                    continue
+                score = (1 - dist) * 1.4  # boost personal history
                 results.append({"score": score, "metadata": meta, "source": "history"})
     except Exception as e:
-        logger.warning(f"User history search: {e}")
+        logger.warning(f"User history RAG error: {e}")
 
-    # ── Global recipe pool (for diversity) ────────────────────────────────
+    # ── Global recipe pool ────────────────────────────────────────────────
     try:
         count = vs.recipes_collection.count()
         if count > 0:
-            r = vs.recipes_collection.query(
-                query_embeddings=[q_emb],
-                n_results=min(8, count)
-            )
-            for i in range(len(r["ids"][0])):
-                meta = r["metadatas"][0][i]
+            take = min(8, count)
+            try:
+                r = vs.recipes_collection.query(
+                    query_embeddings=[q_emb],
+                    n_results=take
+                )
+            except Exception:
+                r = {"ids": [[]], "distances": [[]], "metadatas": [[]]}
+
+            ids = r.get("ids", [[]])[0] if r.get("ids") else []
+            for i in range(len(ids)):
+                meta = r["metadatas"][0][i] if r.get("metadatas") and r["metadatas"][0] else {}
+                dist = r["distances"][0][i] if r.get("distances") and r["distances"][0] else 0.5
                 if excluded_types and meta.get("diet_type", "") in excluded_types:
                     continue
-                score = 1 - r["distances"][0][i]
+                score = 1 - dist
                 results.append({"score": score, "metadata": meta, "source": "global"})
     except Exception as e:
-        logger.warning(f"Global search: {e}")
+        logger.warning(f"Global RAG error: {e}")
 
-    # Deduplicate and sort by score
+    # Deduplicate and sort
     seen, unique = set(), []
     for item in sorted(results, key=lambda x: x["score"], reverse=True):
         t = item["metadata"].get("title", "")
-        if t not in seen:
+        if t and t not in seen:
             seen.add(t)
+            unique.append(item)
+        elif not t:
             unique.append(item)
     return unique[:top_k]
 

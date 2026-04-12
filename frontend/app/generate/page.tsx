@@ -385,8 +385,10 @@ export default function GeneratePage() {
                         headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${currentToken}` },
                         body: JSON.stringify({ meal_type: mealType })
                       })
-                      if (res.ok) {
-                        toast.success('Cooked! Added to AI Memory & Daily Tracker ✅')
+                      const data = await res.json()
+                      if (res.ok && data.success) {
+                        toast.success(`Logged! ${data.data?.calories_remaining || ''} kcal remaining today ✅`)
+                        window.dispatchEvent(new Event('intake-updated'))
                       } else {
                         toast.error('Failed to log cooked meal')
                       }

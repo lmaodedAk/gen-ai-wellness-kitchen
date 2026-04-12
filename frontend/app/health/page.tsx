@@ -112,7 +112,11 @@ export default function HealthPage() {
     } catch {}
 
     buildWeekLog(currentToken)
-  }, [user, view])
+
+    const handleIntakeUpdate = () => refreshIntake(currentToken)
+    window.addEventListener('intake-updated', handleIntakeUpdate)
+    return () => window.removeEventListener('intake-updated', handleIntakeUpdate)
+  }, [user, view, token])
 
   async function logMealManually() {
     const cal = parseInt(logMealCal)
@@ -135,10 +139,11 @@ export default function HealthPage() {
       })
       const data = await res.json()
       if (data.success) {
+        // Use the updated totals returned directly from backend
+        setTodayIntake(data.data)
         setLogMealName('')
         setLogMealCal('')
         setShowLogMeal(false)
-        await refreshIntake(currentToken)
         await buildWeekLog(currentToken)
       }
     } catch {} finally { setLogMealLoading(false) }
@@ -226,7 +231,7 @@ Be brief and practical.`
 
   async function saveNewTarget() {
     if(!newTarget) return;
-    const currentToken = typeof window !== 'undefined' ? localStorage.getItem('access_token') : token;
+    const currentToken = localStorage.getItem('access_token') || token || '';
     try {
       const res = await fetch(`${API_URL}/health/profile/${user?.id}`, {
         method: 'PUT',
@@ -237,6 +242,8 @@ Be brief and practical.`
       if (data.success) {
         setStats(data.data);
         setIsEditingTarget(false);
+        // Also refresh intake totals so remaining reflects new target
+        await refreshIntake(currentToken);
       }
     } catch {}
   }
@@ -376,19 +383,26 @@ Be brief and practical.`
               </button>
             </div>
 
-            {/* Manual custom calorie input */}
+            {/* Manual custom calorie input — kcal FIRST so it's obvious */}
             <div className="bg-red-50 rounded-xl p-3 mb-3 border border-red-100">
-              <p className="text-[10px] font-bold text-red-600 mb-2">✍️ Enter exact calories burnt</p>
-              <div className="flex gap-2">
-                <input value={customActivity} onChange={e => setCustomActivity(e.target.value)}
-                  placeholder="Activity name (e.g. Gym, Morning Walk)"
-                  className="flex-1 border border-red-200 rounded-lg px-3 py-2 text-xs outline-none bg-white" />
-                <input value={customCal} onChange={e => setCustomCal(e.target.value)}
-                  type="number" min="1" placeholder="kcal"
-                  onKeyDown={e => e.key === 'Enter' && addCustomActivity()}
-                  className="w-20 border border-red-200 rounded-lg px-3 py-2 text-xs outline-none bg-white text-center" />
+              <p className="text-[10px] font-bold text-red-600 mb-2">✍️ Quick log — enter calories burnt</p>
+              <div className="flex gap-2 items-center">
+                <div className="flex-1 relative">
+                  <input
+                    value={customCal}
+                    onChange={e => setCustomCal(e.target.value)}
+                    onKeyDown={e => e.key === 'Enter' && addCustomActivity()}
+                    type="number" min="1" placeholder="How many kcal did you burn?"
+                    className="w-full border-2 border-red-300 rounded-lg px-3 py-2.5 text-sm font-bold outline-none bg-white focus:border-red-500 text-red-700 placeholder:text-red-300 placeholder:font-normal" />
+                  <span className="absolute right-3 top-1/2 -translate-y-1/2 text-xs text-red-400 font-semibold">kcal</span>
+                </div>
+                <input
+                  value={customActivity}
+                  onChange={e => setCustomActivity(e.target.value)}
+                  placeholder="Activity (optional)"
+                  className="w-36 border border-red-200 rounded-lg px-3 py-2.5 text-xs outline-none bg-white" />
                 <button onClick={addCustomActivity}
-                  className="px-3 py-2 bg-red-500 text-white rounded-lg text-xs font-bold hover:bg-red-600 transition">
+                  className="px-4 py-2.5 bg-red-500 text-white rounded-lg text-sm font-bold hover:bg-red-600 active:scale-95 transition">
                   + Add
                 </button>
               </div>

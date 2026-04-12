@@ -3,7 +3,7 @@ import { useAuthStore } from '@/lib/store'
 import { useRouter, usePathname } from 'next/navigation'
 import { useEffect, useState } from 'react'
 import Sidebar from '@/components/Sidebar'
-import { Search, Bell } from 'lucide-react'
+import { Search } from 'lucide-react'
 import toast from 'react-hot-toast'
 import { API_URL } from '@/lib/config'
 

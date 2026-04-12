@@ -73,22 +73,26 @@ async def log_intake(
     body: dict,
     authorization: str = Header(None)
 ):
-    """
-    Log what user ate today.
-    body: {
-      meal_type: breakfast|lunch|dinner|snack,
-      recipe_title: str,
-      calories: int,
-      protein_g: float,
-      carbs_g: float,
-      fat_g: float,
-      portion: float (0.5 = half portion, 1 = full)
-    }
-    """
     user = await get_user(authorization)
     from datetime import date
     portion = body.get("portion", 1.0)
-    # Prepare the payload for RAG
+    today = date.today().isoformat()
+
+    doc = {
+        "user_id":       user["_id"],
+        "recipe_title":  body.get("recipe_title", ""),
+        "meal_type":     body.get("meal_type", "lunch"),
+        "calories":      round(body.get("calories", 0) * portion),
+        "protein_g":     round(body.get("protein_g", 0) * portion, 1),
+        "carbs_g":       round(body.get("carbs_g", 0) * portion, 1),
+        "fat_g":         round(body.get("fat_g", 0) * portion, 1),
+        "portion":       portion,
+        "date":          today,
+        "logged_at":     datetime.utcnow()
+    }
+    await get_collection("food_intake").insert_one(doc)
+
+    # Index to AI memory (RAG)
     recipe_meta = {
         "title": body.get("recipe_title", ""),
         "cuisine": "any",
@@ -99,26 +103,39 @@ async def log_intake(
             "protein_g": body.get("protein_g", 0)
         }
     }
-    # Index to AI memory
     from services.rag_service import index_recipe
     await index_recipe(recipe_meta, str(user["_id"]), cooked=True)
 
-    await get_collection("food_intake").insert_one({
-        "user_id":       user["_id"],
-        "recipe_id":     "",
-        "recipe_title":  body.get("recipe_title", ""),
-        "title":         body.get("recipe_title", ""),
-        "meal_type":     body.get("meal_type", "lunch"),
-        "calories":      round(body.get("calories", 0) * portion),
-        "protein_g":     round(body.get("protein_g", 0) * portion, 1),
-        "carbs_g":       round(body.get("carbs_g", 0) * portion, 1),
-        "fat_g":         round(body.get("fat_g", 0) * portion, 1),
-        "portion":       portion,
-        "date":          date.today().isoformat(),
-        "logged_at":     datetime.utcnow()
+    # Return updated totals immediately (no extra fetch needed from frontend)
+    cursor = get_collection("food_intake").find({
+        "user_id": user["_id"],
+        "date": today
     })
-    
-    return ok({"logged": True, "message": "Meal logged and added to AI Memory."})
+    meals = []
+    async for m in cursor:
+        meals.append({
+            "recipe_title": m.get("recipe_title", ""),
+            "meal_type":    m.get("meal_type", ""),
+            "calories":     m.get("calories", 0),
+            "protein_g":    m.get("protein_g", 0),
+            "carbs_g":      m.get("carbs_g", 0),
+            "fat_g":        m.get("fat_g", 0),
+        })
+
+    total_cal = sum(m["calories"] for m in meals)
+    health = await compute_health_profile(user)
+    target = health.get("calorie_target", 2000)
+
+    return ok({
+        "logged": True,
+        "message": "Meal logged and added to AI Memory.",
+        "meals":      meals,
+        "total_cal":  total_cal,
+        "target_cal": target,
+        "remaining":  max(0, target - total_cal),
+        "percentage": min(100, round(total_cal / target * 100) if target > 0 else 0)
+    })
+
 
 @router.get("/intake/today")
 async def get_today_intake(

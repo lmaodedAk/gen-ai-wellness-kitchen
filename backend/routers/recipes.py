@@ -64,14 +64,17 @@ async def generate(
                 logger.warning("Image analysis returned empty — falling back to pantry")
                 ings = []  # Let pantry items drive the recipe
 
-        # ── RAG retrieval with dietary preferences filter ────────────────────
-        # Determine diet filter from user preferences
+        # ── RAG retrieval ─────────────────────────────────────────
+        # When image was used, don't filter RAG by diet (user chose those ingredients)
         user_diets = user.get("dietary_preferences", [])
-        dietary_filter = None
-        if "vegan" in user_diets:
+        if image_detected:
+            dietary_filter = None  # Image overrides dietary preferences
+        elif "vegan" in user_diets:
             dietary_filter = "vegan"
         elif any(d in user_diets for d in ["vegetarian", "veg"]):
             dietary_filter = "veg"
+        else:
+            dietary_filter = None
 
         query = f"{' '.join(ings)} {cuisine} {meal_type}"
         rag_docs = await retrieve(
@@ -79,11 +82,19 @@ async def generate(
         )
         rag_ctx = format_context(rag_docs)
 
-        user_prefs = {
-            "dietary_preferences": user.get("dietary_preferences",[]),
-            "allergies":           user.get("allergies",[]),
-            "health_goal":         user.get("health_goal","maintain")
-        }
+        # When image detected, don't impose dietary prefs (user picked the ingredients)
+        if image_detected:
+            user_prefs = {
+                "dietary_preferences": [],  # Cleared so AI uses what's in image
+                "allergies":           user.get("allergies", []),
+                "health_goal":         user.get("health_goal", "maintain")
+            }
+        else:
+            user_prefs = {
+                "dietary_preferences": user.get("dietary_preferences", []),
+                "allergies":           user.get("allergies", []),
+                "health_goal":         user.get("health_goal", "maintain")
+            }
 
         prompt = build_recipe_prompt(
             ings, health, rag_ctx, pantry,
@@ -302,8 +313,22 @@ async def mark_cooked(
         "logged_at":     datetime.utcnow()
     })
 
+    # Calculate remaining calories
+    cursor = get_collection("food_intake").find({
+        "user_id": user["_id"],
+        "date": date.today().isoformat()
+    })
+    total_cal = 0
+    async for m in cursor:
+        total_cal += m.get("calories", 0)
+    
+    health = await compute_health_profile(user)
+    target = health.get("calorie_target", 2000)
+    calories_remaining = max(0, target - total_cal)
+
     return ok({
         "cooked": True,
         "recipe_id": str(id),
+        "calories_remaining": calories_remaining,
         "message": f"{recipe.get('title', 'Recipe')} logged to your AI Memory!"
     })
