@@ -21,9 +21,9 @@ class Settings(BaseSettings):
     access_token_expire_minutes: int = 10080  # 7 days — long enough for dev sessions
     refresh_token_expire_days: int = 30
 
-    # Gemini AI (free)
-    gemini_api_key: str = ""
-    gemini_model: str = "gemini-2.5-flash"
+    # Groq AI
+    groq_api_key: str = ""
+    groq_model: str = "llama-3.3-70b-versatile"
 
     # Embedding model (runs locally, free)
     embedding_model: str = "all-MiniLM-L6-v2"

@@ -1,43 +1,62 @@
-import google.generativeai as genai
+"""
+AI service — now powered by Groq (llama-3.3-70b-versatile).
+
+Public surface is unchanged so all routers keep working:
+  generate_recipe(prompt, token_budget)
+  generate_recipe_stream(prompt)
+  analyze_image_for_ingredients(image_base64)
+  _init_models()
+"""
+from groq import Groq, AsyncGroq
 import json
 import logging
 import re
 import asyncio
-import time
 import base64
+from typing import Optional
 from core.config import settings
 
 logger = logging.getLogger(__name__)
 
-# ── Model chain: try each in order until one works ──────────────────────────
-# gemini-flash-lite-latest = ~2-5s (fastest with quota)
-# gemini-2.5-flash         = ~5-8s (fallback)
+# ── Model chain: try each in order until one works ───────────────────────────
+# llama-3.3-70b-versatile  – best quality, generous free tier
+# llama3-8b-8192           – lighter fallback (faster)
 MODEL_CHAIN = [
-    "gemini-flash-lite-latest",
-    "gemini-2.5-flash",
-    "gemini-flash-latest",
+    "llama-3.3-70b-versatile",
+    "llama3-8b-8192",
+    "gemma2-9b-it",
 ]
 
-_model_cache: dict = {}
+# Singleton async client
+_async_client: Optional[AsyncGroq] = None
+_sync_client: Optional[Groq] = None
 
-def _get_model(name: str):
-    """Return cached GenerativeModel instance."""
-    if name not in _model_cache:
-        genai.configure(api_key=settings.gemini_api_key)
-        _model_cache[name] = genai.GenerativeModel(name)
-    return _model_cache[name]
+
+def _get_async_client() -> AsyncGroq:
+    global _async_client
+    if _async_client is None:
+        _async_client = AsyncGroq(api_key=settings.groq_api_key)
+    return _async_client
+
+
+def _get_sync_client() -> Groq:
+    global _sync_client
+    if _sync_client is None:
+        _sync_client = Groq(api_key=settings.groq_api_key)
+    return _sync_client
+
 
 def _init_models():
-    """Pre-warm models at startup."""
-    genai.configure(api_key=settings.gemini_api_key)
-    for name in MODEL_CHAIN[:2]:
-        try:
-            _get_model(name)
-        except Exception:
-            pass
-    logger.info(f"Models pre-warmed: {MODEL_CHAIN[:2]}")
+    """Pre-warm clients at startup — no cold start on first request."""
+    try:
+        _get_async_client()
+        _get_sync_client()
+        logger.info(f"Groq clients ready. Primary model: {MODEL_CHAIN[0]}")
+    except Exception as e:
+        logger.warning(f"Groq pre-warm failed (will retry on first request): {e}")
 
-# ── Token budgets (directly controls how long generation takes) ──────────────
+
+# ── Token budgets ─────────────────────────────────────────────────────────────
 TOKEN_BUDGETS = {
     "default":    2200,
     "cook_steps": 2200,
@@ -45,12 +64,6 @@ TOKEN_BUDGETS = {
     "quick":       700,
 }
 
-def _build_config(max_tokens: int):
-    return genai.GenerationConfig(
-        temperature=0.4,
-        top_p=0.85,
-        max_output_tokens=max_tokens,
-    )
 
 def _clean_json(text: str) -> dict:
     """Strip markdown wrappers, extract first complete JSON object."""
@@ -83,32 +96,44 @@ def _clean_json(text: str) -> dict:
     return json.loads(text)
 
 
-async def _call_with_fallback(full_prompt: str, config: genai.GenerationConfig) -> str:
-    """Try each model in order; return first successful response text."""
+async def _call_with_fallback(system_text: str, user_text: str, max_tokens: int) -> str:
+    """Try each Groq model in order; return first successful response text."""
+    client = _get_async_client()
     last_error = None
+
     for model_name in MODEL_CHAIN:
         try:
-            model = _get_model(model_name)
-            # Use async call
-            resp = await model.generate_content_async(full_prompt, generation_config=config)
-            logger.info(f"AI success via {model_name}")
-            return resp.text
+            response = await client.chat.completions.create(
+                model=model_name,
+                messages=[
+                    {"role": "system", "content": system_text},
+                    {"role": "user",   "content": user_text},
+                ],
+                temperature=0.4,
+                max_tokens=max_tokens,
+                top_p=0.85,
+            )
+            text = response.choices[0].message.content
+            logger.info(f"Groq success via {model_name}")
+            return text
         except Exception as e:
             err_str = str(e)
-            logger.warning(f"Model {model_name} failed: {err_str[:120]}")
+            logger.warning(f"Groq model {model_name} failed: {err_str[:120]}")
             last_error = e
-            if "429" not in err_str and "quota" not in err_str.lower():
+            # Only retry on rate-limit errors
+            if "429" not in err_str and "rate_limit" not in err_str.lower():
                 break
             await asyncio.sleep(0.5)
-    raise ValueError(f"All models failed. Last error: {last_error}")
+
+    raise ValueError(f"All Groq models failed. Last error: {last_error}")
 
 
 async def analyze_image_for_ingredients(image_base64: str) -> list:
     """
-    Pass an image to Gemini Vision and return a list of detected food ingredients.
-    image_base64: data URL like 'data:image/jpeg;base64,...' or raw base64.
+    Detect food ingredients from a base64 image using Groq vision (llama-4-scout).
+    Falls back to an empty list if vision is unavailable.
     """
-    # Strip data URL prefix if present
+    # Strip data URL prefix
     if "," in image_base64:
         header, raw = image_base64.split(",", 1)
         mime = header.split(":")[1].split(";")[0] if ":" in header else "image/jpeg"
@@ -116,37 +141,45 @@ async def analyze_image_for_ingredients(image_base64: str) -> list:
         raw = image_base64
         mime = "image/jpeg"
 
-    image_part = {
-        "inline_data": {
-            "mime_type": mime,
-            "data": raw
-        }
-    }
-    text_part = (
-        "Look at this food/ingredient photo carefully. "
-        "List ONLY the raw food ingredients you can clearly see. "
-        "Return a JSON array of ingredient names in English, lowercase. "
-        "Example: [\"carrot\", \"potato\", \"onion\"]. "
-        "Include every vegetable, fruit, grain, protein or spice you can see. "
-        "Do NOT include dishes or meals — only raw ingredients. "
-        "Return ONLY the JSON array, nothing else."
-    )
+    client = _get_async_client()
 
-    genai.configure(api_key=settings.gemini_api_key)
-    # Use a vision-capable model
-    vision_models = ["gemini-1.5-flash", "gemini-1.5-pro", "gemini-2.5-flash"]
+    # Vision-capable models on Groq
+    vision_models = ["meta-llama/llama-4-scout-17b-16e-instruct", "llama-3.2-11b-vision-preview"]
     last_err = None
+
     for model_name in vision_models:
         try:
-            model = genai.GenerativeModel(model_name)
-            resp = model.generate_content(
-                [image_part, text_part],
-                generation_config=genai.GenerationConfig(
-                    temperature=0.1,
-                    max_output_tokens=300,
-                )
+            response = await client.chat.completions.create(
+                model=model_name,
+                messages=[
+                    {
+                        "role": "user",
+                        "content": [
+                            {
+                                "type": "image_url",
+                                "image_url": {
+                                    "url": f"data:{mime};base64,{raw}"
+                                },
+                            },
+                            {
+                                "type": "text",
+                                "text": (
+                                    "Look at this food/ingredient photo carefully. "
+                                    "List ONLY the raw food ingredients you can clearly see. "
+                                    "Return a JSON array of ingredient names in English, lowercase. "
+                                    "Example: [\"carrot\", \"potato\", \"onion\"]. "
+                                    "Include every vegetable, fruit, grain, protein or spice you can see. "
+                                    "Do NOT include dishes or meals — only raw ingredients. "
+                                    "Return ONLY the JSON array, nothing else."
+                                ),
+                            },
+                        ],
+                    }
+                ],
+                temperature=0.1,
+                max_tokens=300,
             )
-            text = resp.text.strip()
+            text = response.choices[0].message.content.strip()
             # Clean markdown wrappers if any
             if "```" in text:
                 text = text.split("```")[1]
@@ -155,32 +188,32 @@ async def analyze_image_for_ingredients(image_base64: str) -> list:
                 text = text.strip()
             ingredients = json.loads(text)
             if isinstance(ingredients, list) and len(ingredients) > 0:
-                logger.info(f"AI detected ingredients from image: {ingredients}")
+                logger.info(f"Groq detected ingredients from image: {ingredients}")
                 return [str(i).strip().lower() for i in ingredients if i]
         except Exception as e:
             logger.warning(f"Vision model {model_name} failed: {str(e)[:120]}")
             last_err = e
-            if "429" not in str(e) and "quota" not in str(e).lower():
+            if "429" not in str(e) and "rate_limit" not in str(e).lower():
                 break
+
     logger.error(f"Image analysis failed: {last_err}")
-    return []  # Return empty list on failure — caller handles fallback
+    return []  # Caller handles fallback
 
 
 async def generate_recipe(prompt: dict, token_budget: str = "default") -> dict:
     """
     Generate AI content and return parsed dict.
-    Uses model fallback chain. Offloads blocking SDK to thread pool.
+    prompt must have 'system' and 'user' keys.
     """
     max_tokens = TOKEN_BUDGETS.get(token_budget, TOKEN_BUDGETS["default"])
-    full_prompt = (
+    system_text = (
         f"{prompt['system']}\n\n"
-        "IMPORTANT: Output ONLY valid JSON. No markdown, no explanation, no extra text.\n\n"
-        f"{prompt['user']}"
+        "IMPORTANT: Output ONLY valid JSON. No markdown, no explanation, no extra text."
     )
-    config = _build_config(max_tokens)
+    user_text = prompt["user"]
 
     try:
-        text = await _call_with_fallback(full_prompt, config)
+        text = await _call_with_fallback(system_text, user_text, max_tokens)
         return _clean_json(text)
     except json.JSONDecodeError as e:
         logger.error(f"JSON parse error: {e}")
@@ -192,25 +225,36 @@ async def generate_recipe(prompt: dict, token_budget: str = "default") -> dict:
 
 async def generate_recipe_stream(prompt: dict):
     """Stream recipe generation — yields token chunks then final parsed recipe."""
-    full_prompt = (
+    system_text = (
         f"{prompt['system']}\n\n"
-        "IMPORTANT: Output ONLY valid JSON. No markdown.\n\n"
-        f"{prompt['user']}"
+        "IMPORTANT: Output ONLY valid JSON. No markdown."
     )
-    config = _build_config(TOKEN_BUDGETS["default"])
+    user_text = prompt["user"]
+    max_tokens = TOKEN_BUDGETS["default"]
+    client = _get_async_client()
     full_text = ""
 
     for model_name in MODEL_CHAIN:
         try:
-            model = _get_model(model_name)
-            resp = await model.generate_content_async(full_prompt, generation_config=config, stream=True)
-            
-            async for chunk in resp:
-                if chunk.text:
-                    full_text += chunk.text
-                    yield {"type": "token", "token": chunk.text}
-            
-            # If we reach here, we successfully streamed
+            stream = await client.chat.completions.create(
+                model=model_name,
+                messages=[
+                    {"role": "system", "content": system_text},
+                    {"role": "user",   "content": user_text},
+                ],
+                temperature=0.4,
+                max_tokens=max_tokens,
+                top_p=0.85,
+                stream=True,
+            )
+
+            async for chunk in stream:
+                delta = chunk.choices[0].delta.content
+                if delta:
+                    full_text += delta
+                    yield {"type": "token", "token": delta}
+
+            # Streamed successfully — parse and return
             try:
                 recipe = _clean_json(full_text)
                 yield {"type": "complete", "recipe": recipe}
@@ -222,7 +266,7 @@ async def generate_recipe_stream(prompt: dict):
         except Exception as e:
             err_str = str(e)
             logger.warning(f"Stream model {model_name} failed: {err_str[:120]}")
-            if "429" not in err_str and "quota" not in err_str.lower():
+            if "429" not in err_str and "rate_limit" not in err_str.lower():
                 yield {"type": "error", "message": f"AI Error: {err_str}"}
                 return
             await asyncio.sleep(0.5)

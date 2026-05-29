@@ -24,7 +24,7 @@ async def lifespan(app: FastAPI):
     logger.info("Starting Wellness Kitchen...")
     await connect_db()
     init_vector_store()
-    _init_models()  # pre-warm Gemini models — no cold start on first request
+    _init_models()  # pre-warm Groq clients — no cold start on first request
     logger.info("Ready!")
     yield
     await disconnect_db()
@@ -35,16 +35,11 @@ app = FastAPI(
     lifespan=lifespan
 )
 
-# CORS must be added FIRST before all routers
+# CORS — wildcard is safe because allow_credentials=False (no cookies)
+# Mixing specific origins + "*" in the same list breaks preflight in FastAPI
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=[
-        "https://gen-ai-wellness-kitchen.vercel.app",
-        "https://*.vercel.app",
-        "http://localhost:3000",
-        "http://127.0.0.1:3000",
-        "*"
-    ],
+    allow_origins=["*"],
     allow_credentials=False,
     allow_methods=["*"],
     allow_headers=["*"],
