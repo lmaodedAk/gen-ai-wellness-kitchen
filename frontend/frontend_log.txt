@@ -269,3 +269,35 @@ Import trace for requested module:
  ✓ Compiled in 407ms (1807 modules)
  ✓ Compiled in 938ms (1807 modules)
  ✓ Compiled in 230ms (1807 modules)
+ ○ Compiling /pantry ...
+ ✓ Compiled /pantry in 892ms (1807 modules)
+ ✓ Compiled /cook in 183ms (968 modules)
+ GET /cook?recipe=Deconstructed%20Oreo%20Paratha%20Bites 200 in 272ms
+ GET /generate?meal=Matar%20Paneer%20with%20Multigrain%20Roti 200 in 557ms
+ ○ Compiling /favicon.ico ...
+ ✓ Compiled /favicon.ico in 1308ms (992 modules)
+ GET /favicon.ico 200 in 1472ms
+ GET /cook?recipe=Deconstructed%20Oreo%20Paratha%20Bites 200 in 461ms
+ GET /generate 200 in 35ms
+ GET /generate?meal=Omelette+Roll+with+Veggies&meal_type=breakfast&cuisine=north_indian 200 in 16ms
+ GET /generate 200 in 16ms
+ GET /health 200 in 215ms
+ ○ Compiling / ...
+ ✓ Compiled / in 663ms (1869 modules)
+ GET /login 200 in 739ms
+ GET / 200 in 741ms
+ GET /generate 200 in 31ms
+ GET /discover 200 in 24ms
+ GET /generate 200 in 24ms
+ GET / 200 in 20ms
+ GET /health 200 in 102ms
+ GET / 200 in 16ms
+ GET /generate 200 in 22ms
+ GET /generate 200 in 15ms
+ ○ Compiling /_not-found ...
+ GET /generate 200 in 1904ms
+ GET /generate 200 in 30ms
+ GET /generate 200 in 27ms
+ ✓ Compiled /_not-found in 2s (1826 modules)
+ GET /auth/login 404 in 2416ms
+ GET /auth/signup 404 in 2409ms

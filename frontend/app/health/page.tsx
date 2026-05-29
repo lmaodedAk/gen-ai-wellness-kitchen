@@ -60,7 +60,7 @@ export default function HealthPage() {
     const tok = localStorage.getItem('access_token')
     if (!tok) return
     try {
-      const res = await fetch(`${API_URL}/health/intake/today`, {
+      const res = await fetch(`${API_URL}/vitals/intake/today`, {
         headers: { Authorization: `Bearer ${tok}` }
       })
       const data = await res.json()
@@ -123,7 +123,7 @@ export default function HealthPage() {
     const currentToken = localStorage.getItem('access_token') || token || ''
     setLogMealLoading(true)
     try {
-      const res = await fetch(`${API_URL}/health/intake/log`, {
+      const res = await fetch(`${API_URL}/vitals/intake/log`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${currentToken}` },
         body: JSON.stringify({
@@ -166,7 +166,7 @@ export default function HealthPage() {
 
   async function buildWeekLog(currentToken: string) {
     try {
-      const res = await fetch(API_URL + '/health/intake/today', {
+      const res = await fetch(API_URL + '/vitals/intake/today', {
         headers: { Authorization: `Bearer ${currentToken}` }
       })
       const data = await res.json()
@@ -232,7 +232,7 @@ Be brief and practical.`
     if(!newTarget) return;
     const currentToken = localStorage.getItem('access_token') || token || '';
     try {
-      const res = await fetch(`${API_URL}/health/profile/${user?.id}`, {
+      const res = await fetch(`${API_URL}/vitals/profile/${user?.id}`, {
         method: 'PUT',
         headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${currentToken}` },
         body: JSON.stringify({ manual_calorie_target: parseInt(newTarget) })

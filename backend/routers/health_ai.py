@@ -4,7 +4,7 @@ from core.dependencies import get_user
 from services.gemini_service import generate_recipe
 from bson import ObjectId
 
-router = APIRouter(prefix="/health-ai", tags=["Health AI"])
+router = APIRouter(prefix="/advisor", tags=["Health AI"])
 
 CONDITIONS = [
     "diabetes", "thyroid", "pcos", "high_cholesterol",

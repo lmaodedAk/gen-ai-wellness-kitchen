@@ -78,7 +78,7 @@ export default function MealPlannerPage() {
     const currentToken = typeof window !== 'undefined' ? localStorage.getItem('access_token') : token;
     if (!currentToken) return
     try {
-      const res = await fetch(`${API}/health/intake/today`, {
+      const res = await fetch(`${API}/vitals/intake/today`, {
         headers: { Authorization: `Bearer ${currentToken}` }
       })
       const data = await res.json()
@@ -95,7 +95,7 @@ export default function MealPlannerPage() {
     const currentToken = typeof window !== 'undefined' ? localStorage.getItem('access_token') : token
     if (!currentToken) return
     try {
-      const res = await fetch(`${API}/health/intake/log`, {
+      const res = await fetch(`${API}/vitals/intake/log`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${currentToken}` },
         body: JSON.stringify({

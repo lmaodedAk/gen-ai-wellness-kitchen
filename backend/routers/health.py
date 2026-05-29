@@ -5,7 +5,7 @@ from core.database import get_collection
 from core.dependencies import get_user
 from services.health_engine import compute_health_profile
 
-router = APIRouter(prefix="/health", tags=["Health"])
+router = APIRouter(prefix="/vitals", tags=["Health"])
 def ok(d): return {"success": True, "data": d}
 
 @router.get("/stats/{user_id}")

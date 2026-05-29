@@ -57,7 +57,7 @@ export default function Dashboard() {
     try {
       const currentToken = localStorage.getItem('access_token')
       const res = await fetch(
-        `${API_URL}/health/intake/today`,
+        `${API_URL}/vitals/intake/today`,
         { headers: { Authorization: `Bearer ${currentToken}` } }
       )
       const data = await res.json()
@@ -124,10 +124,10 @@ export default function Dashboard() {
       recipesApi.list(user.id, 0, 6),
       pantryApi.expiring(5),
       pantryApi.list(user.id),
-      fetch(`${API}/health/intake/today`, { headers }).then(r => r.json()),
+      fetch(`${API}/vitals/intake/today`, { headers }).then(r => r.json()),
       fetch(`${API}/suggestions/daily`, { headers, cache: 'no-store' }).then(r => r.json()),
       fetch(`${API}/leftovers/suggest`, { method: 'POST', headers: { ...headers, 'Content-Type': 'application/json' } }).then(r => r.json()),
-      fetch(`${API}/health/cooked-meals?days=7`, { headers }).then(r => r.json()),
+      fetch(`${API}/vitals/cooked-meals?days=7`, { headers }).then(r => r.json()),
     ]).then(([recipesRes, expiringRes, pantryRes, intakeRes, suggRes, leftRes, cookedRes]) => {
       if (recipesRes.status === 'fulfilled') setRecipes(recipesRes.value.data?.recipes || [])
       if (expiringRes.status === 'fulfilled') setExpiring(expiringRes.value.data || [])

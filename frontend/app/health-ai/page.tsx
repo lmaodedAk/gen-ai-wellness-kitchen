@@ -46,7 +46,7 @@ export default function HealthAIPage() {
     setError('')
     setResult(null)
     try {
-      const res = await fetch(API_URL + '/health-ai/analyze', {
+      const res = await fetch(API_URL + '/advisor/analyze', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${currentToken}` },
         body: JSON.stringify({ conditions: selected })

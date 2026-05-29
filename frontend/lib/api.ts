@@ -69,9 +69,9 @@ export const pantryApi = {
 
 // ─── Health ──────────────────────────────────────────────
 export const healthApi = {
-  stats:          (userId: string) => API.get(`/health/stats/${userId}`).then(r => r.data),
-  updateProfile:  (userId: string, body: any) => API.put(`/health/profile/${userId}`, body).then(r => r.data),
-  history:        (userId: string, days = 30) => API.get(`/health/history/${userId}?days=${days}`).then(r => r.data),
+  stats:          (userId: string) => API.get(`/vitals/stats/${userId}`).then(r => r.data),
+  updateProfile:  (userId: string, body: any) => API.put(`/vitals/profile/${userId}`, body).then(r => r.data),
+  history:        (userId: string, days = 30) => API.get(`/vitals/history/${userId}?days=${days}`).then(r => r.data),
 }
 
 // ─── Meal Planner ────────────────────────────────────────
