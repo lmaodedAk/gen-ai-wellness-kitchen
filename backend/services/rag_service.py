@@ -1,22 +1,24 @@
 import uuid
 import logging
-from sentence_transformers import SentenceTransformer
+from chromadb.utils import embedding_functions
 from core.vector_store import get_vector_store
 from core.config import settings
 
 logger = logging.getLogger(__name__)
-_model: SentenceTransformer = None
 
-def get_model():
-    global _model
-    if not _model:
-        logger.info("Loading embedding model...")
-        _model = SentenceTransformer(settings.embedding_model)
+# Lightweight ONNX-based embedding — same MiniLM model, no PyTorch needed
+_ef = None
+
+def get_embedding_fn():
+    global _ef
+    if not _ef:
+        logger.info("Loading ONNX embedding model...")
+        _ef = embedding_functions.ONNXMiniLM_L6_V2()
         logger.info("Embedding model ready")
-    return _model
+    return _ef
 
 def embed(text: str) -> list:
-    return get_model().encode(text).tolist()
+    return get_embedding_fn()([text])[0]
 
 
 async def index_recipe(recipe: dict, user_id: str, cooked: bool = False):
