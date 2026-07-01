@@ -1,8 +1,9 @@
 from dotenv import load_dotenv
 load_dotenv()
 
-from fastapi import FastAPI
+from fastapi import FastAPI, Request
 from fastapi.middleware.cors import CORSMiddleware
+from fastapi.responses import JSONResponse
 from contextlib import asynccontextmanager
 import logging
 
@@ -35,14 +36,16 @@ app = FastAPI(
     lifespan=lifespan
 )
 
-# CORS — wildcard is safe because allow_credentials=False (no cookies)
-# Mixing specific origins + "*" in the same list breaks preflight in FastAPI
+# CORS must be added BEFORE any routes are registered
+# allow_credentials must be False when allow_origins=["*"]
 app.add_middleware(
     CORSMiddleware,
     allow_origins=["*"],
     allow_credentials=False,
-    allow_methods=["*"],
+    allow_methods=["GET", "POST", "PUT", "DELETE", "OPTIONS", "PATCH"],
     allow_headers=["*"],
+    expose_headers=["*"],
+    max_age=600,
 )
 
 app.include_router(auth.router)
@@ -66,3 +69,4 @@ async def root():
 @app.get("/ping")
 async def ping():
     return {"status": "ok"}
+
