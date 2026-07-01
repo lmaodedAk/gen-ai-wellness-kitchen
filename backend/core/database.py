@@ -15,17 +15,17 @@ async def connect_db():
         _db.client = motor.motor_asyncio.AsyncIOMotorClient(
             settings.mongodb_uri,
             maxPoolSize=50,
-            serverSelectionTimeoutMS=3000
+            serverSelectionTimeoutMS=5000
         )
         # Test the connection
         await _db.client.admin.command("ping")
         _db.db = _db.client[settings.db_name]
-        logger.info("✅ MongoDB connected at localhost:27017")
+        logger.info("✅ MongoDB connected")
         await _create_indexes()
     except Exception as e:
         logger.error(f"❌ MongoDB connection failed: {e}")
-        logger.error("Make sure MongoDB is running locally!")
-        raise
+        logger.warning("⚠️ Starting without DB — requests will fail until MongoDB is reachable")
+        # Don't raise — let the server start so Render keeps the service alive
 
 async def disconnect_db():
     if _db.client:
